@@ -139,7 +139,7 @@ function loginUser() {
  function fillSubjects(){
     const subjects = [...new Set(allMarks.map(m => m.subject))];
     filter.innerHTML = '<option value="all">Все предметы</option>';
-
+    // Используем  вместо ' или "
     subjects.forEach(s => filter.innerHTML += <option value="${s}">${s}</option>);
   }
 
@@ -147,11 +147,10 @@ function loginUser() {
     marks.innerHTML = ''; 
     let sum = 0, count = 0; 
     const f = filter.value;
-    
     allMarks.filter(m => f === 'all' || m.subject === f).forEach(m => { 
       sum += m.mark; 
       count++; 
- 
+      // Используем  для вставки переменных через ${}
       marks.innerHTML += <tr><td>${m.subject}</td><td>${m.topic}</td><td>${m.mark}</td></tr>;
     });
     avg.textContent = count ? (sum / count).toFixed(2) : '-';
@@ -162,20 +161,21 @@ function loginUser() {
     scheduleList.innerHTML = '';
     if (day === 'all') { 
       for (const d in scheduleData) { 
-       
+        // Снова обратные кавычки 
         scheduleList.innerHTML += <li><b>${d}</b>: ${scheduleData[d].join(', ')}</li>; 
       } 
     } else { 
       if (scheduleData[day]) {
-        
-        scheduleList.innerHTML = <li><b>${day}</b>: ${scheduleData[day].join(', ')}</li>;
+        scheduleList.innerHTML = <li><b>${day}</b>: ${scheduleData[day].join(', ')}</li>`;
       }
     }
   }
 
 
+
 </script>
 </body>
 </html>
+
 
 
