@@ -136,59 +136,46 @@ function loginUser() {
     });
   }
 
- function fillSubjects() {
-  const subjects = [...new Set(allMarks.map(m => m.subject))];
+ function fillSubjects(){
+    const subjects = [...new Set(allMarks.map(m => m.subject))];
+    filter.innerHTML = '<option value="all">Все предметы</option>';
 
-  filter.innerHTML = '<option value="all">Все предметы</option>';
+    subjects.forEach(s => filter.innerHTML += <option value="${s}">${s}</option>);
+  }
 
-  subjects.forEach(s => {
-    filter.innerHTML += <option value="${s}">${s}</option>;
-  });
-}
-
-function renderMarks() {
-  marks.innerHTML = '';
-  let sum = 0;
-  let count = 0;
-  const f = filter.value;
-
-  allMarks
-    .filter(m => f === 'all' || m.subject === f)
-    .forEach(m => {
-      sum += m.mark;
-      count++;
-      marks.innerHTML += 
-        <tr>
-          <td>${m.subject}</td>
-          <td>${m.topic}</td>
-          <td>${m.mark}</td>
-        </tr>
-      ;
+  function renderMarks(){
+    marks.innerHTML = ''; 
+    let sum = 0, count = 0; 
+    const f = filter.value;
+    
+    allMarks.filter(m => f === 'all' || m.subject === f).forEach(m => { 
+      sum += m.mark; 
+      count++; 
+ 
+      marks.innerHTML += <tr><td>${m.subject}</td><td>${m.topic}</td><td>${m.mark}</td></tr>;
     });
+    avg.textContent = count ? (sum / count).toFixed(2) : '-';
+  }
 
-  avg.textContent = count ? (sum / count).toFixed(2) : '-';
-}
-
-function renderSchedule() {
-  const day = dayFilter.value;
-  scheduleList.innerHTML = '';
-
-  if (day === 'all') {
-    for (const d in scheduleData) {
-      scheduleList.innerHTML += 
-        <li><b>${d}</b>: ${scheduleData[d].join(', ')}</li>
-      ;
-    }
-  } else {
-    if (scheduleData[day]) {
-      scheduleList.innerHTML = 
-        <li><b>${day}</b>: ${scheduleData[day].join(', ')}</li>
-      ;
+  function renderSchedule(){
+    const day = dayFilter.value;
+    scheduleList.innerHTML = '';
+    if (day === 'all') { 
+      for (const d in scheduleData) { 
+       
+        scheduleList.innerHTML += <li><b>${d}</b>: ${scheduleData[d].join(', ')}</li>; 
+      } 
+    } else { 
+      if (scheduleData[day]) {
+        
+        scheduleList.innerHTML = <li><b>${day}</b>: ${scheduleData[day].join(', ')}</li>;
+      }
     }
   }
-}
+
 
 </script>
 </body>
 </html>
+
 
