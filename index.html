@@ -1,79 +1,106 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>EDiary Final</title>
+  <title>EDiary Final Fix</title>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <style>
-    :root { --main: #f97316; --bg: #fff; --text: #000; }
-    body.dark { --main: #6366f1; --bg: #111; --text: #eee; }
-    body.blue { --main: #3b82f6; }
-    body.pink { --main: #ec4899; }
-    body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; }
-    header { background: var(--main); color: #fff; padding: 15px; display: flex; justify-content: space-between; }
-    .container { max-width: 700px; margin: auto; padding: 20px; }
-    .card { background: rgba(128,128,128,0.1); padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #ccc; }
-    .hidden { display: none; }
-    input, select, button, textarea { width: 100%; padding: 10px; margin: 5px 0; box-sizing: border-box; }
-    button { background: var(--main); color: #fff; border: none; cursor: pointer; font-weight: bold; }
-    .nav { display: flex; gap: 5px; margin-bottom: 15px; }
-    .nav button { background: #888; flex: 1; }
+    :root { --main: #f97316; --bg: #ffffff; --text: #1f2937; --card: #f3f4f6; }
+    body.dark { --main: #6366f1; --bg: #111827; --text: #f9fafb; --card: #1f2937; }
+    body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; transition: 0.3s; }
+    
+    header { background: var(--main); color: #fff; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .container { max-width: 600px; margin: auto; padding: 20px; }
+    
+    .card { background: var(--card); padding: 25px; border-radius: 25px; margin-bottom: 20px; border: 1px solid rgba(0,0,0,0.05); }
+    
+    input, select, button, textarea { 
+      width: 100%; padding: 14px 20px; margin: 8px 0; 
+      border-radius: 25px; /* ЗАКРУГЛЕНИЕ */
+      border: 1px solid #ccc; box-sizing: border-box; font-size: 16px; outline: none;
+    }
+    
+    button { background: var(--main); color: #fff; border: none; cursor: pointer; font-weight: bold; transition: 0.2s; }
+    button:hover { opacity: 0.9; transform: translateY(-1px); }
+    
+    .nav { display: flex; gap: 10px; margin-bottom: 20px; }
+    .nav button { background: #9ca3af; flex: 1; padding: 10px; font-size: 14px; }
+    .nav button.active { background: var(--main); }
+
+    .hidden { display: none !important; }
+    .flex { display: flex; gap: 10px; }
+    .mark-badge { background: var(--main); color: white; padding: 5px 12px; border-radius: 15px; font-weight: bold; margin-right: 5px; }
   </style>
 </head>
 <body>
 
 <header>
-  <span id="userTitle">Дневник</span>
-  <select id="th" onchange="document.body.className=this.value" style="width:auto">
-    <option value="">Оранжевый</option>
-    <option value="dark">Темный</option>
-    <option value="blue">Синий</option>
-    <option value="pink">Розовый</option>
+  <span id="uTitle" style="font-weight: bold;">📘 Дневник</span>
+  <select id="th" onchange="document.body.className=this.value" style="width:auto; padding: 5px 10px;">
+    <option value="">Светлая</option>
+    <option value="dark">Темная</option>
   </select>
 </header>
 
 <div class="container">
   <div id="authBox" class="card">
-    <input id="email" placeholder="Email">
+    <h2 style="text-align: center; margin-top: 0;">Авторизация</h2>
+    <input id="email" type="email" placeholder="Ваш Email">
     <input id="pass" type="password" placeholder="Пароль">
+    
     <select id="role">
-      <option value="student">Ученик</option>
-      <option value="teacher">Учитель</option>
+      <option value="student">Я Ученик</option>
+      <option value="teacher">Я Учитель</option>
     </select>
-    <input id="cls" placeholder="Класс (например 10А)">
-    <button onclick="login()">Войти</button>
+
+    <div class="flex">
+      <select id="cNum">
+        <option value="">Класс</option>
+        <script>for(var i=1; i<=11; i++) document.write('<option value="'+i+'">'+i+'</option>');</script>
+      </select>
+      <select id="cLit">
+        <option value="">Буква</option>
+        <option value="А">А</option><option value="Б">Б</option><option value="В">В</option><option value="Г">Г</option>
+      </select>
+    </div>
+    
+    <button onclick="handleLogin()" style="margin-top: 15px;">Войти в систему</button>
   </div>
 
   <div id="app" class="hidden">
     <div class="nav" id="menu"></div>
 
-    <div id="s-marks" class="section">
+    <div id="sec-marks" class="section">
       <div class="card">
-        <div id="t-marks" class="hidden">
-          <h3>Журнал</h3>
-          <input type="date" id="mDate">
-          <select id="mSub"></select>
-          <div id="stList"></div>
+        <div id="teachView" class="hidden">
+          <h3>Журнал класса</h3>
+          <div class="flex">
+            <input type="date" id="mDate">
+            <select id="mSub"></select>
+          </div>
+          <div id="stList" style="margin-top: 15px;"></div>
         </div>
-        <div id="u-marks" class="hidden">
-          <h3>Мои оценки</h3>
-          <div id="myM"></div>
+
+        <div id="studView" class="hidden">
+          <h3>Мои результаты</h3>
+          <div id="myMarks"></div>
         </div>
       </div>
     </div>
 
-    <div id="s-hw" class="section hidden">
+    <div id="sec-hw" class="section hidden">
       <div class="card">
         <h3>Домашнее задание</h3>
-        <input type="date" id="hDate" onchange="getHW()">
-        <div id="hwShow"></div>
-        <div id="t-hw" class="hidden">
-          <hr>
+<input type="date" id="hDate" onchange="loadHW()">
+        <div id="hwResult" style="margin: 15px 0;"></div>
+        
+        <div id="teachHW" class="hidden">
+          <hr style="opacity: 0.2;">
           <select id="hSub"></select>
-          <textarea id="hText" placeholder="Задание..."></textarea>
-          <button onclick="setHW()">Сохранить ДЗ</button>
+          <textarea id="hText" placeholder="Напишите задание..." rows="3"></textarea>
+          <button onclick="saveHW()">Опубликовать ДЗ</button>
         </div>
       </div>
     </div>
@@ -90,115 +117,148 @@
   firebase.initializeApp(config);
   var auth = firebase.auth();
   var db = firebase.database();
-  var userObj = null;
-  var subs = ["Математика", "Русский", "Физика", "Химия", "История"];
+  var u = null;
+  var subjects = ["Математика", "Русский", "Физика", "Химия", "История", "Английский"];
 
-  function login() {
-    var e = document.getElementById('email').value;
-    var p = document.getElementById('pass').value;
-    var r = document.getElementById('role').value;
-    var c = document.getElementById('cls').value;
-    auth.signInWithEmailAndPassword(e, p).then(function(res) {
-      db.ref('users/' + res.user.uid).update({ role: r, class: c, email: e });
-      location.reload();
+  function handleLogin() {
+    var email = document.getElementById('email').value;
+    var pass = document.getElementById('pass').value;
+    var role = document.getElementById('role').value;
+    var cls = document.getElementById('cNum').value + document.getElementById('cLit').value;
+
+    if (!email  !pass  cls.length < 2) {
+      alert("Заполните все поля и выберите класс!");
+      return;
+    }
+
+    auth.signInWithEmailAndPassword(email, pass).then(function(res) {
+      updateUser(res.user.uid, role, cls, email);
     }).catch(function() {
-      auth.createUserWithEmailAndPassword(e, p).then(function(res) {
-        db.ref('users/' + res.user.uid).set({ role: r, class: c, email: e });
-        location.reload();
-      });
+      auth.createUserWithEmailAndPassword(email, pass).then(function(res) {
+        updateUser(res.user.uid, role, cls, email);
+      }).catch(function(err) { alert(err.message); });
     });
   }
-auth.onAuthStateChanged(function(u) {
-    if (u) {
-      db.ref('users/' + u.uid).once('value', function(snap) {
-        userObj = snap.val();
-        userObj.uid = u.uid;
-        document.getElementById('authBox').style.display = 'none';
-        document.getElementById('app').className = '';
-        init();
+
+  function updateUser(uid, r, c, e) {
+    db.ref('users/' + uid).set({ role: r, class: c, email: e }).then(function() {
+      // Больше не перезагружаем! Просто ждем onAuthStateChanged
+    });
+  }
+
+  auth.onAuthStateChanged(function(user) {
+    if (user) {
+      db.ref('users/' + user.uid).on('value', function(snap) {
+        u = snap.val();
+        if (u) {
+          u.uid = user.uid;
+          showApp();
+        }
       });
     }
   });
 
-  function init() {
+  function showApp() {
+    document.getElementById('authBox').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    document.getElementById('uTitle').innerText = u.email + " (" + u.class + ")";
+    
     var mS = document.getElementById('mSub');
     var hS = document.getElementById('hSub');
-    var h = '';
-    for(var i=0; i<subs.length; i++) h += '<option value="'+subs[i]+'">'+subs[i]+'</option>';
-    mS.innerHTML = h; hS.innerHTML = h;
+    var opt = '';
+    for(var i=0; i<subjects.length; i++) opt += '<option value="'+subjects[i]+'">'+subjects[i]+'</option>';
+    mS.innerHTML = opt; hS.innerHTML = opt;
 
     var menu = document.getElementById('menu');
-    var btns = '<button onclick="go(\'s-marks\')">Оценки</button><button onclick="go(\'s-hw\')">ДЗ</button>';
-    btns += '<button onclick="auth.signOut().then(function(){location.reload()})" style="background:red">Выход</button>';
-    menu.innerHTML = btns;
+    var html = '<button onclick="tab(\'sec-marks\')">Журнал</button>' +
+               '<button onclick="tab(\'sec-hw\')">ДЗ</button>' +
+               '<button onclick="logout()" style="background:#ef4444">Выход</button>';
+    menu.innerHTML = html;
 
-    if (userObj.role == 'teacher') {
-      document.getElementById('t-marks').className = '';
-      document.getElementById('t-hw').className = '';
-      loadSt();
+    if (u.role == 'teacher') {
+      document.getElementById('teachView').classList.remove('hidden');
+      document.getElementById('teachHW').classList.remove('hidden');
+      loadClass();
     } else {
-      document.getElementById('u-marks').className = '';
-      loadMy();
+      document.getElementById('studView').classList.remove('hidden');
+      loadMyMarks();
     }
   }
 
-  function go(id) {
-    document.getElementById('s-marks').className = 'section hidden';
-    document.getElementById('s-hw').className = 'section hidden';
-    document.getElementById(id).className = 'section';
+  function logout() {
+    auth.signOut().then(function() { location.reload(); });
   }
 
-  function loadSt() {
-    db.ref('users').orderByChild('class').equalTo(userObj.class).on('value', function(snap) {
-      var list = document.getElementById('stList'); list.innerHTML = '';
-      snap.forEach(function(c) {
-        if (c.val().role == 'student') {
-          var d = document.createElement('div');
-          d.innerHTML = '<span>'+c.val().email+'</span><input id="in_'+c.key+'" style="width:40px" placeholder="5"><button onclick="addM(\''+c.key+'\')" style="width:40px">OK</button>';
-          list.appendChild(d);
+  function tab(id) {
+    var secs = document.getElementsByClassName('section');
+    for(var i=0; i<secs.length; i++) secs[i].classList.add('hidden');
+    document.getElementById(id).classList.remove('hidden');
+  }
+
+  function loadClass() {
+    db.ref('users').orderByChild('class').equalTo(u.class).on('value', function(snap) {
+      var list = document.getElementById('stList');
+      list.innerHTML = '';
+      snap.forEach(function(child) {
+        var s = child.val();
+        if (s.role == 'student') {
+          var div = document.createElement('div');
+div.className = 'flex';
+          div.style.marginBottom = '10px';
+          div.innerHTML = '<span style="flex:1">'+s.email+'</span>' +
+            '<input id="in_'+child.key+'" type="number" placeholder="5" style="width:70px; margin:0">' +
+            '<button onclick="saveMark(\''+child.key+'\')" style="width:60px; margin:0">ОК</button>';
+          list.appendChild(div);
         }
       });
     });
   }
 
-  function addM(id) {
-    var v = document.getElementById('in_'+id).value;
-    var d = document.getElementById('mDate').value;
-    var s = document.getElementById('mSub').value;
-    if (v && d) {
-      db.ref('marks/' + id + '/' + s).push({ v: v, d: d });
-      alert('ОК');
-    }
+  function saveMark(sid) {
+    var val = document.getElementById('in_'+sid).value;
+    var date = document.getElementById('mDate').value;
+    var sub = document.getElementById('mSub').value;
+    if (val && date) {
+      db.ref('marks/' + sid + '/' + sub).push({ v: val, d: date });
+      alert('Поставлено!');
+    } else alert('Выбери дату!');
   }
 
-  function loadMy() {
-    db.ref('marks/' + userObj.uid).on('value', function(snap) {
-      var res = document.getElementById('myM'); res.innerHTML = '';
-      snap.forEach(function(sSnap) {
-        var m = ''; sSnap.forEach(function(mark) { m += mark.val().v + ' '; });
-        res.innerHTML += '<p>'+sSnap.key+': '+m+'</p>';
+  function loadMyMarks() {
+    db.ref('marks/' + u.uid).on('value', function(snap) {
+      var res = document.getElementById('myMarks');
+      res.innerHTML = '';
+      snap.forEach(function(sub) {
+        var ms = '';
+        sub.forEach(function(m) { ms += '<span class="mark-badge">'+m.val().v+'</span>'; });
+        res.innerHTML += '<div style="margin-bottom:15px;"><b>'+sub.key+':</b><br>'+ms+'</div>';
       });
     });
   }
 
-  function setHW() {
+  function saveHW() {
     var d = document.getElementById('hDate').value;
     var s = document.getElementById('hSub').value;
     var t = document.getElementById('hText').value;
-    db.ref('hw/' + userObj.class + '/' + d + '/' + s).set(t);
-    alert('ДЗ сохранено');
+    if (d && t) {
+      db.ref('hw/' + u.class + '/' + d + '/' + s).set(t);
+      alert('ДЗ сохранено!');
+    } else alert('Выбери дату и введи текст!');
   }
 
-  function getHW() {
+  function loadHW() {
     var d = document.getElementById('hDate').value;
-    db.ref('hw/' + userObj.class + '/' + d).on('value', function(snap) {
-      var res = document.getElementById('hwShow'); res.innerHTML = '';
-      snap.forEach(function(c) { res.innerHTML += '<p><b>'+c.key+':</b> '+c.val()+'</p>'; });
+    db.ref('hw/' + u.class + '/' + d).on('value', function(snap) {
+      var res = document.getElementById('hwResult');
+      res.innerHTML = '';
+      if (!snap.exists()) res.innerHTML = 'Заданий нет.';
+      snap.forEach(function(c) {
+        res.innerHTML += '<div class="card" style="padding:10px; margin:5px 0;"><b>'+c.key+':</b> '+c.val()+'</div>';
+      });
     });
   }
 </script>
 </body>
 </html>
-
 
 
