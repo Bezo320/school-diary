@@ -2,80 +2,85 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>EDiary Pro</title>
+  <title>EDiary Ultimate v3</title>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <style>
-    /* Динамические темы */
-    :root { --main: #f97316; --bg: #ffffff; --text: #1f2937; --card: #fef2f2; }
+    :root { --main: #f97316; --bg: #ffffff; --text: #1f2937; --card: #fef2f2; --border: #e5e7eb; }
     body.theme-blue { --main: #3b82f6; --card: #eff6ff; }
     body.theme-purple { --main: #8b5cf6; --card: #f5f3ff; }
     body.theme-pink { --main: #ec4899; --card: #fdf2f8; }
+    body.theme-dark { --main: #6366f1; --bg: #111827; --text: #f9fafb; --card: #1f2937; --border: #374151; }
 
-    body { margin:0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); }
-    header { background: var(--main); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; transition: 0.3s; }
+    body { margin:0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); transition: 0.3s; }
+    header { background: var(--main); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
     .container { max-width: 900px; margin: auto; padding: 20px; }
-    .card { background: var(--card); padding: 20px; border-radius: 15px; margin-bottom: 20px; border: 1px solid #e5e7eb; }
+    .card { background: var(--card); padding: 20px; border-radius: 15px; margin-bottom: 20px; border: 1px solid var(--border); }
     
-    .nav-menu { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
-    .nav-menu button { background: #eee; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; white-space: nowrap; }
+    .nav-menu { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; }
+    .nav-menu button { background: var(--border); border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; color: var(--text); }
     .nav-menu button.active { background: var(--main); color: white; }
 
-    input, select, button { padding: 12px; margin: 5px 0; width: 100%; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; }
+    input, select, button, textarea { padding: 12px; margin: 5px 0; width: 100%; border-radius: 8px; border: 1px solid var(--border); box-sizing: border-box; background: var(--bg); color: var(--text); }
     button.btn-main { background: var(--main); color: white; border: none; font-weight: bold; cursor: pointer; }
     
-    .hw-item { border-left: 4px solid var(--main); padding-left: 15px; margin: 10px 0; background: white; padding: 10px; border-radius: 5px; }
-    .mark-badge { background: var(--main); color: white; padding: 4px 10px; border-radius: 5px; font-weight: bold; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px; border-bottom: 1px solid var(--border); text-align: left; }
+    .mark-badge { background: var(--main); color: white; padding: 3px 8px; border-radius: 4px; margin-right: 4px; font-weight: bold; }
     .hidden { display: none; }
-    .flex { display: flex; gap: 10px; }
+    .flex { display: flex; gap: 10px; align-items: center; }
   </style>
 </head>
 <body class="theme-orange">
 
 <header>
-  <span id="userTitle">📘 Мой Дневник</span>
-  <select id="themePicker" onchange="changeTheme(this.value)" style="width: auto; padding: 5px;">
+  <span id="userTitle">📘 Дневник</span>
+  <select id="themePicker" onchange="changeTheme(this.value)" style="width: auto;">
     <option value="theme-orange">Оранжевый</option>
     <option value="theme-blue">Синий</option>
     <option value="theme-purple">Фиолетовый</option>
     <option value="theme-pink">Розовый</option>
+    <option value="theme-dark">Темная тема</option>
   </select>
 </header>
 
 <div class="container">
   <div id="authBlock" class="card">
-    <h2>Вход в систему</h2>
+    <h2>Вход</h2>
     <input id="email" placeholder="Email">
     <input id="pass" type="password" placeholder="Пароль">
     <select id="role">
       <option value="student">Я Ученик</option>
       <option value="teacher">Я Учитель</option>
     </select>
-    <input id="userClass" placeholder="Ваш класс (напр. 10А)">
-    <button class="btn-main" onclick="handleAuth()">Войти / Создать</button>
+    <div class="flex">
+      <select id="classNum">
+        <option value="">Класс</option>
+        <script>for(let i=1;i<=11;i++) document.write('<option value="'+i+'">'+i+'</option>')</script>
+      </select>
+      <select id="classLit">
+        <option value="">Буква</option>
+        <option value="А">А</option><option value="Б">Б</option><option value="В">В</option><option value="Г">Г</option>
+      </select>
+    </div>
+    <button class="btn-main" onclick="handleAuth()">Войти / Регистрация</button>
   </div>
 
   <div id="app" class="hidden">
-    <div class="nav-menu" id="mainNav">
-      </div>
+    <div class="nav-menu" id="mainNav"></div>
 
     <div id="sec-schedule" class="section">
       <div class="card">
         <h3>Расписание недели</h3>
-        <div class="flex">
-            <button onclick="changeWeek(-1)">⬅️ Пред. неделя</button>
-            <button onclick="changeWeek(1)">След. неделя ➡️</button>
-        </div>
-        <div id="weekDates" style="margin: 10px 0; font-weight: bold; text-align: center;"></div>
+        <div class="flex"><button onclick="changeWeek(-1)">⬅️</button><button onclick="changeWeek(1)">➡️</button></div>
+        <div id="weekDates" style="text-align:center; padding:10px; font-weight:bold;"></div>
         <div id="scheduleList"></div>
       </div>
     </div>
-
-    <div id="sec-homework" class="section hidden">
+<div id="sec-homework" class="section hidden">
       <div class="card">
         <h3>Домашнее задание</h3>
-        <label>Выберите дату:</label>
         <input type="date" id="hwDatePicker" onchange="loadHomework()">
         <div id="hwResults"></div>
       </div>
@@ -83,38 +88,36 @@
 
     <div id="sec-marks" class="section hidden">
       <div class="card">
-        <h3>Успеваемость</h3>
-        <table width="100%">
-          <thead><tr><th>Предмет</th><th>Оценки</th><th>Итог</th></tr></thead>
-          <tbody id="marksTable"></tbody>
-        </table>
+        <h3>Мои оценки и средний балл</h3>
+        <table id="myMarksTable"></table>
       </div>
     </div>
-<div id="sec-teacher" class="section hidden">
+
+    <div id="sec-teacher-marks" class="section hidden">
       <div class="card">
-        <h3>Добавить ДЗ или Оценку</h3>
-        <label>Дата:</label>
-        <input type="date" id="actionDate">
-        <label>Предмет:</label>
-        <select id="actionSubject"></select>
-        
-        <div style="background: #eee; padding: 10px; border-radius: 10px; margin-top: 10px;">
-          <h4>Действие:</h4>
-          <button onclick="setMode('hw')">Задать ДЗ</button>
-          <button onclick="setMode('mark')">Поставить оценку</button>
-          
-          <div id="inputGroup" class="hidden" style="margin-top: 10px;">
-            <input id="inputValue" placeholder="Текст задания или оценка">
-            <button class="btn-main" onclick="submitAction()">Сохранить данные</button>
-          </div>
+        <h3>Журнал: Выставление оценок</h3>
+        <div class="flex">
+          <input type="date" id="markDate">
+          <select id="markSubject"></select>
         </div>
+        <hr>
+        <div id="studentsList">Загрузка...</div>
+      </div>
+    </div>
+
+    <div id="sec-teacher-hw" class="section hidden">
+      <div class="card">
+        <h3>Задать домашнее задание</h3>
+        <input type="date" id="hwActionDate">
+        <select id="hwActionSubject"></select>
+        <textarea id="hwText" placeholder="Напишите задание здесь..."></textarea>
+        <button class="btn-main" onclick="submitHW()">Опубликовать ДЗ</button>
       </div>
     </div>
   </div>
 </div>
 
 <script>
-  // Firebase Config (Твой)
   const firebaseConfig = {
     apiKey: "AIzaSyCEo8QxfX8faFjUaQNwNlTXbvws7LgXAEs",
     authDomain: "school-diary-3798a.firebaseapp.com",
@@ -126,150 +129,149 @@
   const auth = firebase.auth();
   const db = firebase.database();
 
-  let role = 'student';
-  let myClass = '';
+  let uData = null;
   let currentWeekOffset = 0;
-  let actionType = ''; // 'hw' или 'mark'
+  const subjects = ["Математика", "Русский язык", "Литература", "Физика", "Химия", "История", "География", "Английский"];
 
-  const subjects = ["Математика", "Русский язык", "Литература", "Физика", "Химия", "История", "Английский"];
+  function changeTheme(t) { document.body.className = t; localStorage.setItem('diary-theme', t); }
 
-  function changeTheme(theme) {
-    document.body.className = theme;
-    localStorage.setItem('diary-theme', theme);
-  }
-
-  // Авторизация
   function handleAuth() {
     const email = document.getElementById('email').value;
     const pass = document.getElementById('pass').value;
-    role = document.getElementById('role').value;
-    myClass = document.getElementById('userClass').value;
+    const r = document.getElementById('role').value;
+    const c = document.getElementById('classNum').value + document.getElementById('classLit').value;
+    if(!c  !email  !pass) return alert("Заполните все поля!");
 
-    if(!myClass) return alert("Введите класс!");
-
-    auth.signInWithEmailAndPassword(email, pass).catch(() => {
-      auth.createUserWithEmailAndPassword(email, pass);
+    auth.signInWithEmailAndPassword(email, pass).then(res => {
+        db.ref('users/' + res.user.uid).update({ role: r, class: c, email: email });
+    }).catch(() => {
+        auth.createUserWithEmailAndPassword(email, pass).then(res => {
+            db.ref('users/' + res.user.uid).set({ role: r, class: c, email: email });
+        });
     });
   }
 
   auth.onAuthStateChanged(user => {
     if(user) {
-      document.getElementById('authBlock').classList.add('hidden');
-      document.getElementById('app').classList.remove('hidden');
-      document.getElementById('userTitle').textContent = "Дневник: " + myClass;
-      buildNav();
-      fillTeacherSelect();
-      loadSchedule();
-      loadMarks();
+      db.ref('users/' + user.uid).once('value', snap => {
+        uData = snap.val(); uData.uid = user.uid;
+        document.getElementById('authBlock').classList.add('hidden');
+        document.getElementById('app').classList.remove('hidden');
+        document.getElementById('userTitle').textContent = uData.email + " [" + uData.class + "]";
+        initApp();
+      });
     }
   });
 
-  function buildNav() {
-    const nav = document.getElementById('mainNav');
-    let html = '<button onclick="showSection(\'sec-schedule\')" class="active">Расписание</button>' +
-               '<button onclick="showSection(\'sec-homework\')">Домашнее задание</button>' +
-               '<button onclick="showSection(\'sec-marks\')">Итоги</button>';
-    if(role === 'teacher') html += '<button onclick="showSection(\'sec-teacher\')" style="background:#4ade80">Учительская</button>';
-    html += '<button onclick="location.reload()" style="background:#f87171">Выход</button>';
-    nav.innerHTML = html;
-  }
+  function logout() { auth.signOut().then(() => { location.reload(); }); }
 
-  function showSection(id) {
+  function initApp() {
+    const nav = document.getElementById('mainNav');
+    const subOpts = subjects.map(s => '<option value="'+s+'">'+s+'</option>').join('');
+    document.getElementById('markSubject').innerHTML = subOpts;
+    document.getElementById('hwActionSubject').innerHTML = subOpts;
+
+    if(uData.role === 'student') {
+      nav.innerHTML = '<button onclick="showSection(\'sec-schedule\')">Расписание</button>' +
+                      '<button onclick="showSection(\'sec-homework\')">ДЗ</button>' +
+                      '<button onclick="showSection(\'sec-marks\')">Итоги</button>';
+      loadMyMarks();
+    } else {
+      nav.innerHTML = '<button onclick="showSection(\'sec-teacher-marks\')">Журнал</button>' +
+                      '<button onclick="showSection(\'sec-teacher-hw\')">Задать ДЗ</button>';
+      loadStudentsForTeacher();
+    }
+    nav.innerHTML += '<button onclick="logout()" style="background:#f87171; color:white;">Выход</button>';
+    loadSchedule();
+  }
+function showSection(id) {
     document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
     document.getElementById(id).classList.remove('hidden');
   }
 
-  // Расписание с неделями
-  function changeWeek(dir) {
-    currentWeekOffset += dir;
-    loadSchedule();
-  }
-
-  function loadSchedule() {
-    const list = document.getElementById('scheduleList');
-    const datesInfo = document.getElementById('weekDates');
-    list.innerHTML = '';
-    
-    let curr = new Date();
-    let first = curr.getDate() - curr.getDay() + 1 + (currentWeekOffset * 7);
-    let firstDay = new Date(curr.setDate(first));
-    let lastDay = new Date(curr.setDate(first + 4));
-
-    datesInfo.innerText = firstDay.toLocaleDateString() + " — " + lastDay.toLocaleDateString();
-
-    const days = ["Пн", "Вт", "Ср", "Чт", "Пт"];
-days.forEach((day, idx) => {
-        let d = new Date(firstDay);
-        d.setDate(firstDay.getDate() + idx);
-        let dateStr = d.toLocaleDateString();
-        list.innerHTML += '<div class="hw-item"><b>' + day + ' (' + dateStr + ')</b><br>' + subjects.slice(0, 5).join(', ') + '</div>';
-    });
-  }
-
-  // Учительская логика
-  function fillTeacherSelect() {
-    const sel = document.getElementById('actionSubject');
-    sel.innerHTML = subjects.map(s => '<option value="'+s+'">'+s+'</option>').join('');
-  }
-
-  function setMode(mode) {
-    actionType = mode;
-    document.getElementById('inputGroup').classList.remove('hidden');
-    document.getElementById('inputValue').placeholder = mode === 'hw' ? "Введите текст ДЗ" : "Оценка (2-5)";
-  }
-
-  function submitAction() {
-    const date = document.getElementById('actionDate').value;
-    const sub = document.getElementById('actionSubject').value;
-    const val = document.getElementById('inputValue').value;
-
-    if(!date || !val) return alert("Заполни все!");
-
-    if(actionType === 'hw') {
-      db.ref('homework/' + myClass + '/' + date + '/' + sub).set(val);
-    } else {
-      db.ref('marks/' + myClass + '/' + sub).push({ val: val, date: date });
-    }
-    alert("Успешно сохранено!");
-  }
-
-  // Загрузка ДЗ для ученика
-  function loadHomework() {
-    const date = document.getElementById('hwDatePicker').value;
-    const results = document.getElementById('hwResults');
-    results.innerHTML = 'Загрузка...';
-
-    db.ref('homework/' + myClass + '/' + date).on('value', snap => {
-      results.innerHTML = '';
-      if(!snap.exists()) results.innerHTML = '<p>На эту дату ДЗ не найдено</p>';
+  // --- ЛОГИКА ОЦЕНОК ---
+  function loadStudentsForTeacher() {
+    db.ref('users').orderByChild('class').equalTo(uData.class).on('value', snap => {
+      const list = document.getElementById('studentsList');
+      list.innerHTML = '';
       snap.forEach(child => {
-        results.innerHTML += '<div class="hw-item"><b>' + child.key + '</b><br>' + child.val() + '</div>';
+        if(child.val().role === 'student') {
+          list.innerHTML += '<div class="card flex" style="justify-content:space-between;">' +
+            '<span>' + child.val().email + '</span>' +
+            '<div class="flex" style="width:180px;">' +
+              '<input type="number" id="m_'+child.key+'" min="2" max="5" placeholder="Оценка" style="margin:0">' +
+              '<button onclick="sendMark(\''+child.key+'\')" style="width:50px;">ОК</button>' +
+            '</div></div>';
+        }
       });
     });
   }
 
-  // Загрузка Итогов и Оценок по датам
-  function loadMarks() {
-    db.ref('marks/' + myClass).on('value', snap => {
-      const tbody = document.getElementById('marksTable');
-      tbody.innerHTML = '';
-      
+  function sendMark(sid) {
+    const val = document.getElementById('m_'+sid).value;
+    const date = document.getElementById('markDate').value;
+    const sub = document.getElementById('markSubject').value;
+    if(!val || !date) return alert("Выберите дату и оценку!");
+    db.ref('marks/' + sid + '/' + sub).push({ val: val, date: date });
+    document.getElementById('m_'+sid).value = '';
+    alert("Оценка сохранена!");
+  }
+
+  function loadMyMarks() {
+    db.ref('marks/' + uData.uid).on('value', snap => {
+      const table = document.getElementById('myMarksTable');
+      table.innerHTML = '<tr><th>Предмет</th><th>Оценки</th><th>Средний</th></tr>';
       snap.forEach(subSnap => {
-        let markList = [];
-        let sum = 0;
-        subSnap.forEach(m => {
-          markList.push('<span title="' + m.val().date + '" class="mark-badge">' + m.val().val + '</span>');
+        let marks = [], sum = 0;
+        subSnap.forEach(m => { 
+          marks.push('<span class="mark-badge" title="'+m.val().date+'">'+m.val().val+'</span>');
           sum += Number(m.val().val);
         });
-        
         let avg = (sum / subSnap.numChildren()).toFixed(2);
-        tbody.innerHTML += '<tr><td>'+subSnap.key+'</td><td>'+markList.join(' ')+'</td><td><b>'+Math.round(avg)+'</b></td></tr>';
+        table.innerHTML += '<tr><td>'+subSnap.key+'</td><td>'+marks.join('')+'</td><td><b>'+avg+'</b></td></tr>';
       });
     });
   }
 
-  // Инициализация темы
+  // --- ЛОГИКА ДЗ ---
+  function submitHW() {
+    const date = document.getElementById('hwActionDate').value;
+    const sub = document.getElementById('hwActionSubject').value;
+    const text = document.getElementById('hwText').value;
+    if(!date || !text) return alert("Заполните дату и текст ДЗ!");
+    db.ref('homework/' + uData.class + '/' + date + '/' + sub).set(text);
+    alert("Задание опубликовано!");
+    document.getElementById('hwText').value = '';
+  }
+
+  function loadHomework() {
+    const date = document.getElementById('hwDatePicker').value;
+    const res = document.getElementById('hwResults');
+    db.ref('homework/' + uData.class + '/' + date).on('value', snap => {
+      res.innerHTML = '';
+      if(!snap.exists()) res.innerHTML = "На эту дату заданий нет.";
+      snap.forEach(child => {
+        res.innerHTML += '<div class="card"><b>' + child.key + ':</b><p>' + child.val() + '</p></div>';
+      });
+    });
+  }
+
+  // --- РАСПИСАНИЕ ---
+  function loadSchedule() {
+    const list = document.getElementById('scheduleList');
+    list.innerHTML = '';
+    let curr = new Date();
+    let first = curr.getDate() - curr.getDay() + 1 + (currentWeekOffset * 7);
+    let fDate = new Date(curr.setDate(first));
+    document.getElementById('weekDates').innerText = fDate.toLocaleDateString() + " — " + new Date(curr.setDate(first+4)).toLocaleDateString();
+    ["Пн","Вт","Ср","Чт","Пт"].forEach((day, i) => {
+      list.innerHTML += '<div class="card" style="margin:5px 0; padding:10px;"><b>'+day+'</b>: '+subjects.slice(0, 5).join(', ')+'</div>';
+    });
+  }
+
+  function changeWeek(v) { currentWeekOffset += v; loadSchedule(); }
   if(localStorage.getItem('diary-theme')) changeTheme(localStorage.getItem('diary-theme'));
 </script>
 </body>
 </html>
+
