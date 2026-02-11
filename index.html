@@ -1,82 +1,79 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
   <meta charset="UTF-8">
-  <title>EDiary Ultra Safe</title>
+  <title>EDiary Final</title>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <style>
-    :root { --main: #f97316; --bg: #ffffff; --text: #1f2937; --card: #fef2f2; }
-    body.theme-dark { --main: #6366f1; --bg: #111827; --text: #f9fafb; --card: #1f2937; }
-    body { margin:0; font-family: sans-serif; background: var(--bg); color: var(--text); }
-    header { background: var(--main); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
-    .container { max-width: 800px; margin: auto; padding: 20px; }
-    .card { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #ddd; }
+    :root { --main: #f97316; --bg: #fff; --text: #000; }
+    body.dark { --main: #6366f1; --bg: #111; --text: #eee; }
+    body.blue { --main: #3b82f6; }
+    body.pink { --main: #ec4899; }
+    body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; }
+    header { background: var(--main); color: #fff; padding: 15px; display: flex; justify-content: space-between; }
+    .container { max-width: 700px; margin: auto; padding: 20px; }
+    .card { background: rgba(128,128,128,0.1); padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #ccc; }
     .hidden { display: none; }
-    .flex { display: flex; gap: 10px; align-items: center; }
-    input, select, button, textarea { padding: 10px; margin: 5px 0; width: 100%; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; background: #fff; color: #000; }
-    button { background: var(--main); color: white; border: none; cursor: pointer; font-weight: bold; }
+    input, select, button, textarea { width: 100%; padding: 10px; margin: 5px 0; box-sizing: border-box; }
+    button { background: var(--main); color: #fff; border: none; cursor: pointer; font-weight: bold; }
     .nav { display: flex; gap: 5px; margin-bottom: 15px; }
-    .nav button { background: #eee; color: #000; font-size: 14px; flex: 1; }
-    .mark-item { border-bottom: 1px solid #ddd; padding: 5px 0; display: flex; justify-content: space-between; }
+    .nav button { background: #888; flex: 1; }
   </style>
 </head>
 <body>
 
 <header>
-  <span id="userTitle">Мой Дневник</span>
-  <select id="themePicker" onchange="document.body.className=this.value" style="width:auto">
-    <option value="">Светлая</option>
-    <option value="theme-dark">Темная</option>
+  <span id="userTitle">Дневник</span>
+  <select id="th" onchange="document.body.className=this.value" style="width:auto">
+    <option value="">Оранжевый</option>
+    <option value="dark">Темный</option>
+    <option value="blue">Синий</option>
+    <option value="pink">Розовый</option>
   </select>
 </header>
 
 <div class="container">
-  <div id="authBlock" class="card">
+  <div id="authBox" class="card">
     <input id="email" placeholder="Email">
     <input id="pass" type="password" placeholder="Пароль">
     <select id="role">
-      <option value="student">Я Ученик</option>
-      <option value="teacher">Я Учитель</option>
+      <option value="student">Ученик</option>
+      <option value="teacher">Учитель</option>
     </select>
-    <div class="flex">
-        <input id="cNum" placeholder="Класс (1-11)">
-        <input id="cLit" placeholder="Буква (А-Г)">
-    </div>
-    <button onclick="handleAuth()">Войти</button>
+    <input id="cls" placeholder="Класс (например 10А)">
+    <button onclick="login()">Войти</button>
   </div>
 
   <div id="app" class="hidden">
-    <div class="nav" id="mainNav"></div>
+    <div class="nav" id="menu"></div>
 
-    <div id="sec-marks" class="section">
+    <div id="s-marks" class="section">
       <div class="card">
-        <div id="teacherWork" class="hidden">
-          <h3>Журнал оценок</h3>
+        <div id="t-marks" class="hidden">
+          <h3>Журнал</h3>
           <input type="date" id="mDate">
           <select id="mSub"></select>
-          <div id="sList"></div>
+          <div id="stList"></div>
         </div>
-        <div id="studentWork" class="hidden">
+        <div id="u-marks" class="hidden">
           <h3>Мои оценки</h3>
-          <div id="myMarks"></div>
+          <div id="myM"></div>
         </div>
       </div>
     </div>
 
-    <div id="sec-hw" class="section hidden">
+    <div id="s-hw" class="section hidden">
       <div class="card">
         <h3>Домашнее задание</h3>
-        <input type="date" id="hDate" onchange="loadHW()">
-        <div id="hwResult"></div>
-        
-        <div id="teacherHW" class="hidden">
+        <input type="date" id="hDate" onchange="getHW()">
+        <div id="hwShow"></div>
+        <div id="t-hw" class="hidden">
           <hr>
-          <h3>Задать ДЗ</h3>
           <select id="hSub"></select>
-          <textarea id="hText" placeholder="Введите задание..."></textarea>
-          <button onclick="saveHW()">Сохранить задание</button>
+          <textarea id="hText" placeholder="Задание..."></textarea>
+          <button onclick="setHW()">Сохранить ДЗ</button>
         </div>
       </div>
     </div>
@@ -84,26 +81,23 @@
 </div>
 
 <script>
-  // Твой конфиг
-  const firebaseConfig = {
+  var config = {
     apiKey: "AIzaSyCEo8QxfX8faFjUaQNwNlTXbvws7LgXAEs",
     authDomain: "school-diary-3798a.firebaseapp.com",
     databaseURL: "https://school-diary-3798a.firebaseapp.com",
     projectId: "school-diary-3798a"
   };
+  firebase.initializeApp(config);
+  var auth = firebase.auth();
+  var db = firebase.database();
+  var userObj = null;
+  var subs = ["Математика", "Русский", "Физика", "Химия", "История"];
 
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const db = firebase.database();
-
-  let u = { role: '', class: '', email: '', uid: '' };
-  const subs = ["Математика", "Русский", "Физика", "Химия", "История", "География"];
-function handleAuth() {
-    const e = document.getElementById('email').value;
-    const p = document.getElementById('pass').value;
-    const r = document.getElementById('role').value;
-    const c = document.getElementById('cNum').value + document.getElementById('cLit').value;
-
+  function login() {
+    var e = document.getElementById('email').value;
+    var p = document.getElementById('pass').value;
+    var r = document.getElementById('role').value;
+    var c = document.getElementById('cls').value;
     auth.signInWithEmailAndPassword(e, p).then(function(res) {
       db.ref('users/' + res.user.uid).update({ role: r, class: c, email: e });
       location.reload();
@@ -114,126 +108,97 @@ function handleAuth() {
       });
     });
   }
-
-  auth.onAuthStateChanged(function(user) {
-    if (user) {
-      db.ref('users/' + user.uid).once('value', function(snap) {
-        u = snap.val();
-        u.uid = user.uid;
-        document.getElementById('authBlock').classList.add('hidden');
-        document.getElementById('app').classList.remove('hidden');
-        document.getElementById('userTitle').innerText = u.email;
-        start();
+auth.onAuthStateChanged(function(u) {
+    if (u) {
+      db.ref('users/' + u.uid).once('value', function(snap) {
+        userObj = snap.val();
+        userObj.uid = u.uid;
+        document.getElementById('authBox').style.display = 'none';
+        document.getElementById('app').className = '';
+        init();
       });
     }
   });
 
-  function start() {
-    const nav = document.getElementById('mainNav');
-    const mSub = document.getElementById('mSub');
-    const hSub = document.getElementById('hSub');
-    
-    let options = '';
-    for(let i = 0; i < subs.length; i++) {
-        options += '<option value="'+subs[i]+'">'+subs[i]+'</option>';
-    }
-    mSub.innerHTML = options; 
-    hSub.innerHTML = options;
+  function init() {
+    var mS = document.getElementById('mSub');
+    var hS = document.getElementById('hSub');
+    var h = '';
+    for(var i=0; i<subs.length; i++) h += '<option value="'+subs[i]+'">'+subs[i]+'</option>';
+    mS.innerHTML = h; hS.innerHTML = h;
 
-    let navHtml = '<button onclick="tab(\'sec-marks\')">Оценки</button>';
-    navHtml += '<button onclick="tab(\'sec-hw\')">ДЗ</button>';
-    navHtml += '<button onclick="logout()" style="background:#ff4444; color:#fff">Выход</button>';
-    nav.innerHTML = navHtml;
+    var menu = document.getElementById('menu');
+    var btns = '<button onclick="go(\'s-marks\')">Оценки</button><button onclick="go(\'s-hw\')">ДЗ</button>';
+    btns += '<button onclick="auth.signOut().then(function(){location.reload()})" style="background:red">Выход</button>';
+    menu.innerHTML = btns;
 
-    if (u.role === 'teacher') {
-      document.getElementById('teacherWork').classList.remove('hidden');
-      document.getElementById('teacherHW').classList.remove('hidden');
-      loadStudents();
+    if (userObj.role == 'teacher') {
+      document.getElementById('t-marks').className = '';
+      document.getElementById('t-hw').className = '';
+      loadSt();
     } else {
-      document.getElementById('studentWork').classList.remove('hidden');
-      loadMyMarks();
+      document.getElementById('u-marks').className = '';
+      loadMy();
     }
   }
 
-  function logout() {
-    auth.signOut().then(function() {
-        location.reload();
-    });
+  function go(id) {
+    document.getElementById('s-marks').className = 'section hidden';
+    document.getElementById('s-hw').className = 'section hidden';
+    document.getElementById(id).className = 'section';
   }
 
-  function tab(id) {
-    const sections = document.querySelectorAll('.section');
-    for(let i = 0; i < sections.length; i++) {
-        sections[i].classList.add('hidden');
-    }
-    document.getElementById(id).classList.remove('hidden');
-  }
-
-  function loadStudents() {
-    db.ref('users').orderByChild('class').equalTo(u.class).on('value', function(snap) {
-      const list = document.getElementById('sList');
-      list.innerHTML = '';
-      snap.forEach(function(child) {
-        const student = child.val();
-        if (student.role === 'student') {
-          const div = document.createElement('div');
-          div.className = 'flex';
-          div.innerHTML = '<span>'+student.email+'</span>' +
-            '<input type="number" id="in_'+child.key+'" style="width:60px" placeholder="5">' +
-            '<button onclick="addM(\''+child.key+'\')" style="width:50px">OK</button>';
-          list.appendChild(div);
+  function loadSt() {
+    db.ref('users').orderByChild('class').equalTo(userObj.class).on('value', function(snap) {
+      var list = document.getElementById('stList'); list.innerHTML = '';
+      snap.forEach(function(c) {
+        if (c.val().role == 'student') {
+          var d = document.createElement('div');
+          d.innerHTML = '<span>'+c.val().email+'</span><input id="in_'+c.key+'" style="width:40px" placeholder="5"><button onclick="addM(\''+c.key+'\')" style="width:40px">OK</button>';
+          list.appendChild(d);
         }
       });
     });
   }
 
-  function addM(sid) {
-    const val = document.getElementById('in_'+sid).value;
-    const date = document.getElementById('mDate').value;
-    const sub = document.getElementById('mSub').value;
-    if (val && date) {
-      db.ref('marks/' + sid + '/' + sub).push({ v: val, d: date });
-      alert('Оценка добавлена');
-    } else {
-      alert('Выбери дату и оценку');
+  function addM(id) {
+    var v = document.getElementById('in_'+id).value;
+    var d = document.getElementById('mDate').value;
+    var s = document.getElementById('mSub').value;
+    if (v && d) {
+      db.ref('marks/' + id + '/' + s).push({ v: v, d: d });
+      alert('ОК');
     }
   }
 
-  function loadMyMarks() {
-    db.ref('marks/' + u.uid).on('value', function(snap) {
-      const res = document.getElementById('myMarks');
-      res.innerHTML = '';
+  function loadMy() {
+    db.ref('marks/' + userObj.uid).on('value', function(snap) {
+      var res = document.getElementById('myM'); res.innerHTML = '';
       snap.forEach(function(sSnap) {
-        let m = '';
-        sSnap.forEach(function(mark) { m += mark.val().v + ' '; });
-        res.innerHTML += '<div class="mark-item"><b>'+sSnap.key+':</b> <span>'+m+'</span></div>';
+        var m = ''; sSnap.forEach(function(mark) { m += mark.val().v + ' '; });
+        res.innerHTML += '<p>'+sSnap.key+': '+m+'</p>';
       });
     });
   }
-function saveHW() {
-    const d = document.getElementById('hDate').value;
-    const s = document.getElementById('hSub').value;
-    const t = document.getElementById('hText').value;
-    if (d && t) {
-        db.ref('hw/' + u.class + '/' + d + '/' + s).set(t);
-        alert('ДЗ сохранено');
-    } else {
-        alert('Выбери дату и введи текст');
-    }
+
+  function setHW() {
+    var d = document.getElementById('hDate').value;
+    var s = document.getElementById('hSub').value;
+    var t = document.getElementById('hText').value;
+    db.ref('hw/' + userObj.class + '/' + d + '/' + s).set(t);
+    alert('ДЗ сохранено');
   }
 
-  function loadHW() {
-    const d = document.getElementById('hDate').value;
-    db.ref('hw/' + u.class + '/' + d).on('value', function(snap) {
-      const res = document.getElementById('hwResult');
-      res.innerHTML = '';
-      snap.forEach(function(c) {
-        res.innerHTML += '<div class="card"><b>'+c.key+':</b> <p>'+c.val()+'</p></div>';
-      });
+  function getHW() {
+    var d = document.getElementById('hDate').value;
+    db.ref('hw/' + userObj.class + '/' + d).on('value', function(snap) {
+      var res = document.getElementById('hwShow'); res.innerHTML = '';
+      snap.forEach(function(c) { res.innerHTML += '<p><b>'+c.key+':</b> '+c.val()+'</p>'; });
     });
   }
 </script>
 </body>
 </html>
+
 
 
