@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Электронный дневник</title>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <style>
+    :root {
+      --bg:#fff7ed; --card:#ffffff; --primary:#f97316; --text:#1f2937;
+    }
+    body.dark { --bg:#1f2937; --card:#111827; --primary:#fb923c; --text:#f9fafb; }
+    body { margin:0; font-family:Arial,sans-serif; background:var(--bg); color:var(--text); transition:.3s; }
+    header { background:var(--primary); color:white; padding:15px 20px; font-size:20px; display:flex; justify-content:space-between; align-items:center; }
+    .container { max-width:1000px; margin:auto; padding:20px; }
+    .card { background:var(--card); padding:20px; border-radius:14px; margin-bottom:20px; box-shadow:0 10px 25px rgba(0,0,0,.08); }
+    input, select, button { padding:10px; margin:6px 0; width:100%; border-radius:8px; border:1px solid #ddd; }
+    button { background:var(--primary); color:white; border:none; cursor:pointer; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { padding:10px; border-bottom:1px solid #e5e7eb; text-align:center; }
+    th { background:#fed7aa; }
+    body.dark th { background:#374151; }
+    .hidden { display:none; }
+  </style>
+</head>
+<body>
+<header>📘 Электронный дневник <button onclick="toggleTheme()">🌗 Сменить тему</button></header>
+<div class="container">
+
+<!-- Авторизация -->
+<div class="card" id="login">
+  <h2>Вход</h2>
+  <input id="email" placeholder="Email">
+  <input id="password" type="password" placeholder="Пароль">
+  <select id="role">
+    <option value="student">Ученик</option>
+    <option value="teacher">Учитель</option>
+  </select>
+  <input id="className" placeholder="Класс (например 10А)">
+  <button onclick="loginUser()">Войти / Регистрация</button>
+</div>
+
+<!-- Приложение -->
+<div id="app" class="hidden">
+
+  <!-- Панель учителя -->
+  <div class="card hidden" id="teacherPanel">
+    <h3>Добавить оценку</h3>
+    <input id="subject" placeholder="Предмет">
+    <input id="topic" placeholder="Тема">
+    <input id="mark" type="number" min="2" max="5" placeholder="Оценка">
+    <button onclick="addMark()">Добавить</button>
+  </div>
+
+  <!-- Оценки -->
+  <div class="card">
+    <h3>Оценки</h3>
+    <select id="filter" onchange="renderMarks()">
+      <option value="all">Все предметы</option>
+    </select>
+    <table>
+      <thead><tr><th>Предмет</th><th>Тема</th><th>Оценка</th></tr></thead>
+      <tbody id="marks"></tbody>
+    </table>
+    <p><b>Средний балл:</b> <span id="avg"></span></p>
+  </div>
+
+  <!-- Расписание -->
+  <div class="card">
+    <h3>Расписание</h3>
+    <select id="dayFilter" onchange="renderSchedule()">
+      <option value="all">Все дни</option>
+      <option value="Пн">Понедельник</option>
+      <option value="Вт">Вторник</option>
+      <option value="Ср">Среда</option>
+      <option value="Чт">Четверг</option>
+      <option value="Пт">Пятница</option>
+    </select>
+    <ul id="scheduleList"></ul>
+  </div>
+
+  <!-- Выход -->
+  <div class="card">
+    <button onclick="logout()">🚪 Выйти</button>
+  </div>
+
+</div>
+</div>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCEo8QxfX8faFjUaQNwNlTXbvws7LgXAEs",
+    authDomain: "school-diary-3798a.firebaseapp.com",
+    databaseURL: "https://school-diary-3798a.firebaseapp.com",
+    projectId: "school-diary-3798a"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.database();
+
+  let userRole = null;
+  let userClass = null;
+  let allMarks = [];
+  const scheduleData = { 'Пн':['Математика','Русский'], 'Вт':['Физика','История'], 'Ср':['Английский','Информатика'], 'Чт':['Химия','География'], 'Пт':['Литература','Биология'] };
+
+  function toggleTheme() { document.body.classList.toggle('dark'); localStorage.setItem('theme', document.body.classList.contains('dark')); }
+  if(localStorage.getItem('theme')==='true') document.body.classList.add('dark');
+function loginUser() {
+    userRole = role.value; userClass = className.value;
+    const em = email.value; const pw = password.value;
+    auth.signInWithEmailAndPassword(em,pw).catch(()=>auth.createUserWithEmailAndPassword(em,pw));
+  }
+
+  function logout() { auth.signOut(); app.classList.add('hidden'); login.classList.remove('hidden'); }
+
+  auth.onAuthStateChanged(u=>{
+    if(u){
+      login.classList.add('hidden'); app.classList.remove('hidden');
+      if(userRole==='teacher') teacherPanel.classList.remove('hidden');
+      loadMarks(); renderSchedule();
+    }
+  });
+
+  function addMark(){
+    const data={class:userClass,subject:subject.value,topic:topic.value,mark:Number(mark.value)};
+    db.ref('marks').push(data);
+  }
+
+  function loadMarks(){
+    db.ref('marks').on('value', snap=>{
+      allMarks=[];
+      snap.forEach(s=>{const d=s.val(); if(d.class===userClass) allMarks.push(d);});
+      fillSubjects(); renderMarks();
+    });
+  }
+
+  function fillSubjects(){
+    const subjects=[...new Set(allMarks.map(m=>m.subject))];
+    filter.innerHTML='<option value="all">Все предметы</option>';
+    subjects.forEach(s=>filter.innerHTML+=<option value="${s}">${s}</option>);
+  }
+
+  function renderMarks(){
+    marks.innerHTML=''; let sum=0,count=0; const f=filter.value;
+    allMarks.filter(m=>f==='all'||m.subject===f).forEach(m=>{ sum+=m.mark; count++; marks.innerHTML+=<tr><td>${m.subject}</td><td>${m.topic}</td><td>${m.mark}</td></tr>});
+    avg.textContent = count?(sum/count).toFixed(2):'-';
+  }
+
+  function renderSchedule(){
+    const day=dayFilter.value;
+    scheduleList.innerHTML='';
+    if(day==='all'){ for(const d in scheduleData){ scheduleList.innerHTML+=<li><b>${d}</b>: ${scheduleData[d].join(', ')}</li>; } }
+    else{ if(scheduleData[day]) scheduleList.innerHTML=<li><b>${day}</b>: ${scheduleData[day].join(', ')}</li>; }
+  }
+</script>
+</body>
+</html>
