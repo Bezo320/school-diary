@@ -309,3 +309,295 @@ function initApp() {
 </script>
 </body>
 </html>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Электронный дневник - Система</title>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <style>
+    :root { 
+      --bg:#fff7ed; --card:#ffffff; --primary:#f97316; --text:#1f2937; 
+      --m5:#22c55e; --m4:#a855f7; --m3:#eab308; --m2:#ef4444;
+    }
+    body.dark { --bg:#1f2937; --card:#111827; --primary:#fb923c; --text:#f9fafb; }
+    body { margin:0; font-family:sans-serif; background:var(--bg); color:var(--text); transition:.3s; }
+    
+    header { 
+      background:var(--primary); color:white; padding:15px; 
+      display:flex; justify-content:space-between; align-items:center;
+      position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .container { max-width:1000px; margin:auto; padding:20px; }
+    .card { background:var(--card); padding:20px; border-radius:18px; margin-bottom:20px; box-shadow:0 4px 15px rgba(0,0,0,.08); }
+    
+    .nav-tabs { display:flex; gap:10px; margin-bottom:20px; overflow-x:auto; padding-bottom: 5px; }
+    .nav-tabs button { flex:1; white-space:nowrap; background:#e5e7eb; color:black; border:none; padding:12px; cursor:pointer; border-radius:12px; font-weight: bold; transition: 0.2s; }
+    .nav-tabs button.active { background:var(--primary); color:white; }
+    
+    input, select, button, textarea { padding:14px; margin:5px 0; width:100%; border-radius:12px; border:1px solid #ddd; box-sizing:border-box; outline: none; font-size: 16px; }
+    button { background:var(--primary); color:white; border:none; cursor:pointer; font-weight:bold; transition: 0.2s; }
+    button:hover { opacity: 0.9; transform: translateY(-1px); }
+    
+    table { width:100%; border-collapse:collapse; margin-top:10px; }
+    th, td { padding:12px; border-bottom:1px solid #eee; text-align:left; }
+    
+    .hidden { display:none !important; }
+
+    /* Оценки */
+    .mark-badge { 
+      display:inline-block; width: 35px; height: 35px; line-height: 35px; 
+      text-align: center; border-radius:10px; font-weight:bold; color:white; 
+    }
+    .m5 { background: var(--m5); } .m4 { background: var(--m4); }
+    .m3 { background: var(--m3); } .m2 { background: var(--m2); }
+
+    /* Таймер */
+    #lessonTimer { font-size: 0.8em; background: rgba(0,0,0,0.1); padding: 5px 10px; border-radius: 8px; margin-left: 10px; }
+    
+    .avg-val { font-weight: bold; font-size: 1.1em; color: var(--primary); }
+    .schedule-day { margin-bottom: 15px; padding-left: 10px; border-left: 4px solid var(--primary); }
+  </style>
+</head>
+<body>
+
+<header>
+  <span>
+    📘 <b>Дневник:</b> <span id="userDisplay">Загрузка...</span>
+    <span id="lessonTimer" class="hidden"></span>
+  </span>
+  <button onclick="toggleTheme()" style="width:auto; padding:5px 12px; border-radius: 10px;">🌗</button>
+</header>
+
+<div class="container">
+  <div id="loginPage" class="card">
+    <h2 style="text-align: center;">Вход в систему</h2>
+    <input id="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Пароль">
+    <select id="role">
+      <option value="student">Я Ученик</option>
+      <option value="teacher">Я Учитель</option>
+    </select>
+    <input id="className" placeholder="Класс (например, 10А)">
+    <button onclick="loginUser()">Войти</button>
+  </div>
+
+  <div id="app" class="hidden">
+    <div class="nav-tabs">
+      <button onclick="showTab('tab-marks')" id="btn-marks" class="active">Оценки</button>
+      <button onclick="showTab('tab-schedule')" id="btn-schedule">Расписание</button>
+      <button onclick="showTab('tab-quarter')" id="btn-quarter">Итоги</button>
+      <button onclick="logout()" style="background:#ef4444; color:white; flex: 0.4;">Выход</button>
+    </div>
+<div id="tab-marks" class="tab-content">
+      <div id="teacherPanel" class="card hidden">
+        <h3>Панель учителя: Поставить оценку</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <select id="subjectSelect"></select> 
+            <input id="markInput" type="number" min="2" max="5" placeholder="Оценка (2-5)">
+        </div>
+        <input id="topicInput" placeholder="Тема урока (например, Контрольная работа)">
+        <button onclick="addMark()">Сохранить оценку</button>
+      </div>
+      
+      <div class="card">
+        <h3>Журнал последних оценок</h3>
+        <div id="marksList"></div>
+      </div>
+    </div>
+
+    <div id="tab-schedule" class="tab-content hidden">
+      <div class="card">
+        <h3>Расписание занятий</h3>
+        <div id="scheduleContent"></div>
+      </div>
+    </div>
+
+    <div id="tab-quarter" class="tab-content hidden">
+      <div class="card">
+        <h3>Аналитика успеваемости</h3>
+        <table>
+          <thead><tr><th>Предмет</th><th>Средний балл</th><th>Прогноз</th></tr></thead>
+          <tbody id="quarterTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCEo8QxfX8faFjUaQNwNlTXbvws7LgXAEs",
+    authDomain: "school-diary-3798a.firebaseapp.com",
+    databaseURL: "https://school-diary-3798a.firebaseapp.com",
+    projectId: "school-diary-3798a"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.database();
+
+  const schedule = {
+    'Понедельник': ['Математика', 'Русский язык', 'Физика'],
+    'Вторник': ['История', 'Английский', 'Физкультура'],
+    'Среда': ['Алгебра', 'Литература', 'Информатика'],
+    'Четверг': ['Химия', 'Биология', 'География'],
+    'Пятница': ['Обществознание', 'ОБЖ', 'Геометрия']
+  };
+
+  const bellSchedule = [
+    {s: "08:30", e: "09:15"}, {s: "09:25", e: "10:10"}, {s: "10:25", e: "11:10"},
+    {s: "11:25", e: "12:10"}, {s: "12:20", e: "13:05"}, {s: "13:15", e: "14:00"}
+  ];
+
+  let currentUser = null;
+  let userRole = localStorage.getItem('role') || 'student';
+  let userClass = localStorage.getItem('class') || '';
+
+  function toggleTheme() {
+    document.body.classList.toggle('dark');
+    localStorage.setItem('dark', document.body.classList.contains('dark'));
+  }
+  if(localStorage.getItem('dark')==='true') document.body.classList.add('dark');
+
+  function showTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+    document.querySelectorAll('.nav-tabs button').forEach(b => b.classList.remove('active'));
+    document.getElementById(tabId).classList.remove('hidden');
+    document.getElementById('btn-' + tabId.replace('tab-', '')).classList.add('active');
+  }
+
+  function loginUser() {
+    const email = document.getElementById('email').value;
+    const pass = document.getElementById('password').value;
+    if(!email || !pass) return alert("Введите данные!");
+    
+    userRole = document.getElementById('role').value;
+    userClass = document.getElementById('className').value || "Общий";
+    
+    localStorage.setItem('role', userRole);
+    localStorage.setItem('class', userClass);
+
+    auth.signInWithEmailAndPassword(email, pass)
+      .catch(() => auth.createUserWithEmailAndPassword(email, pass));
+  }
+
+  function logout() {
+    auth.signOut();
+    localStorage.clear();
+    location.reload();
+  }
+
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      currentUser = user;
+      document.getElementById('loginPage').classList.add('hidden');
+      document.getElementById('app').classList.remove('hidden');
+      document.getElementById('userDisplay').textContent = user.email.split('@')[0] + ' (' + userClass + ')';
+      document.getElementById('lessonTimer').classList.remove('hidden');
+if (userRole === 'teacher') {
+        document.getElementById('teacherPanel').classList.remove('hidden');
+        fillSubjectSelect();
+      }
+      
+      initApp();
+      startTimer();
+    } else {
+      document.getElementById('loginPage').classList.remove('hidden');
+      document.getElementById('app').classList.add('hidden');
+    }
+  });
+
+  function fillSubjectSelect() {
+    const select = document.getElementById('subjectSelect');
+    const allSubjects = new Set();
+    for (let day in schedule) { schedule[day].forEach(s => allSubjects.add(s)); }
+    select.innerHTML = '';
+    allSubjects.forEach(s => { select.innerHTML += '<option value="' + s + '">' + s + '</option>'; });
+  }
+
+  function addMark() {
+    const subject = document.getElementById('subjectSelect').value;
+    const topic = document.getElementById('topicInput').value;
+    const mark = document.getElementById('markInput').value;
+    if(!topic || !mark) return alert('Введите тему и оценку!');
+
+    db.ref('marks/' + userClass).push({
+      subject: subject,
+      topic: topic,
+      mark: Number(mark),
+      date: new Date().toLocaleDateString(),
+      student: currentUser.email
+    });
+
+    document.getElementById('topicInput').value = '';
+    document.getElementById('markInput').value = '';
+  }
+
+  function startTimer() {
+    setInterval(() => {
+      const now = new Date();
+      const cur = now.getHours().toString().padStart(2,'0') + ":" + now.getMinutes().toString().padStart(2,'0');
+      let status = "Уроки окончены";
+      for (let i=0; i<bellSchedule.length; i++) {
+        let b = bellSchedule[i];
+        if (cur >= b.s && cur <= b.e) { status = Идет ${i+1} урок; break; }
+        else if (i < bellSchedule.length-1 && cur > b.e && cur < bellSchedule[i+1].s) { status = Перемена; break; }
+      }
+      document.getElementById('lessonTimer').textContent = status;
+    }, 1000);
+  }
+
+  function initApp() {
+    const schDiv = document.getElementById('scheduleContent');
+    schDiv.innerHTML = '';
+    for (let day in schedule) {
+      schDiv.innerHTML += <div class="schedule-day"><b>${day}:</b> ${schedule[day].join(', ')}</div>;
+    }
+
+    db.ref('marks/' + userClass).on('value', snap => {
+      const marksList = document.getElementById('marksList');
+      const quarterTable = document.getElementById('quarterTable');
+      marksList.innerHTML = '';
+      quarterTable.innerHTML = '';
+      
+      let allMarks = [];
+      snap.forEach(child => { allMarks.push(child.val()); });
+
+      allMarks.slice().reverse().forEach(data => {
+        let mClass = 'm' + Math.round(data.mark);
+        marksList.innerHTML += 
+          <div style="display: flex; align-items: center; gap: 15px; border-bottom: 1px solid rgba(0,0,0,0.05); padding: 12px 0;">
+            <div class="mark-badge ${mClass}">${data.mark}</div>
+            <div>
+              <div style="font-weight: bold;">${data.subject}</div>
+              <div style="font-size: 0.85em; color: gray;">${data.date} • ${data.topic}</div>
+            </div>
+          </div>;
+      });
+
+      const stats = {};
+      allMarks.forEach(m => {
+        if (!stats[m.subject]) stats[m.subject] = { sum: 0, count: 0 };
+        stats[m.subject].sum += m.mark;
+        stats[m.subject].count++;
+      });
+
+      for (let sub in stats) {
+        let avg = (stats[sub].sum / stats[sub].count).toFixed(2);
+        let color = avg >= 4.5 ? 'var(--m5)' : (avg >= 3.5 ? 'var(--m4)' : 'var(--m3)');
+        quarterTable.innerHTML += 
+          <tr>
+            <td>${sub}</td>
+            <td class="avg-val" style="color: ${color}">${avg}</td>
+            <td><b>${Math.round(avg)}</b></td>
+          </tr>;
+      }
+    });
+  }
+</script>
+</body>
+</html>
