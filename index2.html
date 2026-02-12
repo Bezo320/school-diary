@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>EDiary Round Fix</title>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <style>
+    :root { --main: #f97316; --bg: #ffffff; --card: #f3f4f6; }
+    body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 0; }
+    header { background: var(--main); color: #fff; padding: 15px; display: flex; justify-content: space-between; }
+    .container { max-width: 450px; margin: auto; padding: 20px; }
+    
+    /* ЗАКРУГЛЕНИЕ ВСЕГО */
+    .card { background: var(--card); padding: 25px; border-radius: 30px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    input, select, button, textarea { 
+      width: 100%; padding: 15px; margin: 10px 0; 
+      border-radius: 30px; /* Круглые кнопки и поля */
+      border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; outline: none;
+    }
+    button { background: var(--main); color: #fff; border: none; cursor: pointer; font-weight: bold; }
+    
+    .nav { display: flex; gap: 10px; margin-bottom: 20px; }
+    .nav button { background: #999; flex: 1; padding: 10px; }
+    .hidden { display: none; }
+    .flex { display: flex; gap: 10px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <span id="topTitle">Электронный Дневник</span>
+  <button onclick="exit()" id="exitBtn" class="hidden" style="width:auto; margin:0; padding:5px 15px; background:#e11d48">Выход</button>
+</header>
+
+<div class="container">
+  <div id="loginScreen" class="card">
+    <h2 style="text-align:center">Авторизация</h2>
+    <input id="logEmail" type="email" placeholder="Email">
+    <input id="logPass" type="password" placeholder="Пароль">
+    <select id="logRole">
+      <option value="student">Ученик</option>
+      <option value="teacher">Учитель</option>
+    </select>
+    <div class="flex">
+      <select id="classN">
+        <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+        <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+        <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+        <option value="10">10</option><option value="11">11</option>
+      </select>
+      <select id="classL">
+        <option value="А">А</option><option value="Б">Б</option>
+        <option value="В">В</option><option value="Г">Г</option>
+      </select>
+    </div>
+    <button onclick="performAuth()">ВОЙТИ</button>
+  </div>
+
+  <div id="diaryScreen" class="hidden">
+    <div class="nav">
+      <button onclick="openTab('tab-marks')">Оценки</button>
+      <button onclick="openTab('tab-hw')">ДЗ</button>
+    </div>
+
+    <div id="tab-marks" class="section">
+      <div class="card">
+        <div id="teacherView" class="hidden">
+          <h3>Поставить оценку</h3>
+          <input type="date" id="mDate">
+          <select id="mSub"></select>
+          <div id="listStudents"></div>
+        </div>
+        <div id="studentView" class="hidden">
+          <h3>Мои оценки</h3>
+          <div id="myMarks"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-hw" class="section hidden">
+      <div class="card">
+        <h3>Домашнее задание</h3>
+        <input type="date" id="hDate" onchange="showHW()">
+        <div id="hwBox" style="margin:15px 0"></div>
+        <div id="teacherHW" class="hidden">
+          <hr>
+          <select id="hSub"></select>
+          <textarea id="hText" placeholder="Текст задания..."></textarea>
+          <button onclick="addHW()">Сохранить ДЗ</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  var firebaseConfig = {
+    apiKey: "AIzaSyCEo8QxfX8faFjUaQNwNlTXbvws7LgXAEs",
+    authDomain: "school-diary-3798a.firebaseapp.com",
+    databaseURL: "https://school-diary-3798a.firebaseapp.com",
+    projectId: "school-diary-3798a"
+  };
+firebase.initializeApp(firebaseConfig);
+  var auth = firebase.auth();
+  var db = firebase.database();
+  var me = { uid: "", role: "", class: "", email: "" };
+  var subjects = ["Математика", "Русский", "Физика", "Химия", "История"];
+
+  function performAuth() {
+    var e = document.getElementById("logEmail").value;
+    var p = document.getElementById("logPass").value;
+    var r = document.getElementById("logRole").value;
+    var c = document.getElementById("classN").value + document.getElementById("classL").value;
+
+    auth.signInWithEmailAndPassword(e, p).then(function(res) {
+      db.ref("users/" + res.user.uid).update({ role: r, class: c, email: e });
+    }).catch(function() {
+      auth.createUserWithEmailAndPassword(e, p).then(function(res) {
+        db.ref("users/" + res.user.uid).set({ role: r, class: c, email: e });
+      });
+    });
+  }
+
+  auth.onAuthStateChanged(function(user) {
+    if (user) {
+      db.ref("users/" + user.uid).on("value", function(snap) {
+        var data = snap.val();
+        if (data) {
+          me = data;
+          me.uid = user.uid;
+          startApp();
+        }
+      });
+    }
+  });
+
+  function startApp() {
+    document.getElementById("loginScreen").style.display = "none";
+    document.getElementById("diaryScreen").style.display = "block";
+    document.getElementById("exitBtn").style.display = "block";
+    document.getElementById("topTitle").innerText = me.email + " (" + me.class + ")";
+
+    var sHtml = "";
+    for(var i=0; i<subjects.length; i++) sHtml += "<option value='"+subjects[i]+"'>"+subjects[i]+"</option>";
+    document.getElementById("mSub").innerHTML = sHtml;
+    document.getElementById("hSub").innerHTML = sHtml;
+
+    if (me.role == "teacher") {
+      document.getElementById("teacherView").style.display = "block";
+      document.getElementById("teacherHW").style.display = "block";
+      loadClassList();
+    } else {
+      document.getElementById("studentView").style.display = "block";
+      loadMyMarks();
+    }
+  }
+
+  function openTab(id) {
+    var ss = document.getElementsByClassName("section");
+    for(var i=0; i<ss.length; i++) ss[i].style.display = "none";
+    document.getElementById(id).style.display = "block";
+  }
+
+  function loadClassList() {
+    db.ref("users").orderByChild("class").equalTo(me.class).on("value", function(snap) {
+      var box = document.getElementById("listStudents");
+      box.innerHTML = "";
+      snap.forEach(function(child) {
+        var s = child.val();
+        if (s.role == "student") {
+          var d = document.createElement("div");
+          d.className = "flex";
+          d.style.marginBottom = "10px";
+          d.innerHTML = "<span style='flex:1'>"+s.email+"</span>" +
+            "<input id='val_"+child.key+"' type='number' style='width:60px; margin:0' placeholder='5'>" +
+            "<button onclick='sendM(\""+child.key+"\")' style='width:60px; margin:0'>ОК</button>";
+          box.appendChild(d);
+        }
+      });
+    });
+  }
+
+  function sendM(sid) {
+    var v = document.getElementById("val_"+sid).value;
+    var d = document.getElementById("mDate").value;
+    var s = document.getElementById("mSub").value;
+    if (v.length > 0 && d.length > 0) {
+      db.ref("marks/" + sid + "/" + s).push({ v: v, d: d });
+      alert("Готово");
+    }
+  }
+
+  function loadMyMarks() {
+    db.ref("marks/" + me.uid).on("value", function(snap) {
+      var box = document.getElementById("myMarks");
+      box.innerHTML = "";
+      snap.forEach(function(sub) {
+        var ms = "";
+        sub.forEach(function(m) { ms += "<span style='background:#f97316; color:white; padding:5px 12px; border-radius:20px; margin-right:5px'>"+m.val().v+"</span>"; });
+        box.innerHTML += "<div style='margin-bottom:15px'><b>"+sub.key+":</b><br>"+ms+"</div>";
+      });
+    });
+  }
+
+  function addHW() {
+var d = document.getElementById("hDate").value;
+    var s = document.getElementById("hSub").value;
+    var t = document.getElementById("hText").value;
+    if (d.length > 0 && t.length > 0) {
+      db.ref("hw/" + me.class + "/" + d + "/" + s).set(t);
+      alert("Сохранено");
+    }
+  }
+
+  function showHW() {
+    var d = document.getElementById("hDate").value;
+    db.ref("hw/" + me.class + "/" + d).on("value", function(snap) {
+      var box = document.getElementById("hwBox");
+      box.innerHTML = "";
+      snap.forEach(function(c) {
+        box.innerHTML += "<div class='card' style='padding:15px; margin:5px 0'><b>"+c.key+":</b> "+c.val()+"</div>";
+      });
+    });
+  }
+
+  function exit() {
+    auth.signOut().then(function() { location.reload(); });
+  }
+</script>
+</body>
+</html>
