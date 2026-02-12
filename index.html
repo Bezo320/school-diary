@@ -1,71 +1,61 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>EDiary Pro</title>
+  <title>EDiary Pro Final</title>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  
   <style>
     :root { --main: #f97316; --bg: #ffffff; --card: #f3f4f6; }
     body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 0; }
     header { background: var(--main); color: #fff; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
     .container { max-width: 500px; margin: auto; padding: 20px; }
-    .card { background: var(--card); padding: 20px; border-radius: 25px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-    input, select, button, textarea { width: 100%; padding: 12px; margin: 8px 0; border-radius: 20px; border: 1px solid #ddd; box-sizing: border-box; outline: none; }
+    .card { background: var(--card); padding: 20px; border-radius: 30px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+    input, select, button, textarea { width: 100%; padding: 15px; margin: 8px 0; border-radius: 30px; border: 1px solid #ddd; box-sizing: border-box; outline: none; font-size: 16px; }
     button { background: var(--main); color: #fff; border: none; font-weight: bold; cursor: pointer; }
     .nav { display: flex; gap: 8px; margin-bottom: 15px; overflow-x: auto; }
-    .nav button { background: #cbd5e1; color: #1e293b; padding: 8px 15px; font-size: 13px; white-space: nowrap; }
-    .hidden { display: none; }
+    .nav button { background: #cbd5e1; color: #1e293b; padding: 10px 15px; font-size: 13px; }
+    .hidden { display: none !important; }
     .flex { display: flex; gap: 10px; align-items: center; }
-    .mark-item { display: inline-block; position: relative; margin-right: 8px; }
-    .mark-badge { background: var(--main); color: white; padding: 4px 10px; border-radius: 12px; font-weight: bold; cursor: help; }
+    .mark-badge { background: var(--main); color: white; padding: 5px 12px; border-radius: 20px; font-weight: bold; margin-right: 5px; }
     .avg { color: #666; font-size: 0.9em; margin-left: 10px; font-style: italic; }
-    #timer { font-size: 14px; background: rgba(0,0,0,0.1); padding: 5px 12px; border-radius: 15px; }
-    .lesson-row { border-bottom: 1px solid #ddd; padding: 8px 0; display: flex; justify-content: space-between; }
+    #timer { font-size: 14px; background: rgba(0,0,0,0.1); padding: 5px 12px; border-radius: 20px; }
   </style>
 </head>
 <body>
 
 <header>
   <div>
-    <div id="topTitle" style="font-weight:bold">EDiary</div>
-    <div id="timer" class="hidden">Загрузка таймера...</div>
+    <div id="topTitle" style="font-weight:bold">Электронный Дневник</div>
+    <div id="timer" class="hidden">Загрузка...</div>
   </div>
-  <button onclick="exitApp()" id="exitBtn" class="hidden" style="width:auto; background:#ef4444; padding:5px 12px">Выход</button>
+  <button onclick="exitApp()" id="exitBtn" class="hidden" style="width:auto; background:#ef4444; margin:0; padding:8px 15px;">Выход</button>
 </header>
 
 <div class="container">
   <div id="loginBox" class="card">
-    <h2 style="text-align:center; margin:0 0 15px">Вход</h2>
+    <h2 style="text-align:center; margin-top:0">Вход</h2>
     <input id="email" type="email" placeholder="Email">
     <input id="pass" type="password" placeholder="Пароль">
     <select id="role">
       <option value="student">Ученик</option>
       <option value="teacher">Учитель</option>
     </select>
-   <div class="flex">
-  <select id="cN">
-    <option value="1">1</option>
-    <option value="2">2</option>
-    <option value="3">3</option>
-    <option value="4">4</option>
-    <option value="5">5</option>
-    <option value="6">6</option>
-    <option value="7">7</option>
-    <option value="8">8</option>
-    <option value="9">9</option>
-    <option value="10">10</option>
-    <option value="11">11</option>
-  </select>
-
-  <select id="cL">
-    <option value="А">А</option>
-    <option value="Б">Б</option>
-    <option value="В">В</option>
-    <option value="Г">Г</option>
-  </select>
-</div>
+    
+    <div class="flex">
+      <select id="cN">
+        <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+        <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+        <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+        <option value="10">10</option><option value="11">11</option>
+      </select>
+      <select id="cL">
+        <option value="А">А</option><option value="Б">Б</option>
+        <option value="В">В</option><option value="Г">Г</option>
+      </select>
+    </div>
     <button onclick="doAuth()">ВОЙТИ</button>
   </div>
 
@@ -79,35 +69,34 @@
     <div id="tab-m" class="section">
       <div class="card">
         <div id="t-view" class="hidden">
-          <h3>Выставить оценку</h3>
+          <h3>Журнал учителя</h3>
           <input type="date" id="mDate">
           <select id="mSub"></select>
-          <input type="text" id="mComm" placeholder="Комментарий (напр. Контрольная)">
+          <input type="text" id="mComm" placeholder="Комментарий">
           <div id="sList"></div>
         </div>
         <div id="s-view" class="hidden">
-          <h3>Мои успехи</h3>
+          <h3>Мои оценки</h3>
           <div id="myMarks"></div>
         </div>
       </div>
     </div>
-
-    <div id="tab-h" class="section hidden">
+<div id="tab-h" class="section hidden">
       <div class="card">
         <h3>Домашнее задание</h3>
         <input type="date" id="hDate" onchange="loadHW()">
-<div id="hwContent"></div>
+        <div id="hwContent" style="margin:15px 0"></div>
         <div id="t-hw" class="hidden">
           <select id="hSub"></select>
-          <textarea id="hText" placeholder="Описание задания..."></textarea>
-          <button onclick="saveHW()">Сохранить задание</button>
+          <textarea id="hText" placeholder="Что задано?"></textarea>
+          <button onclick="saveHW()">Сохранить ДЗ</button>
         </div>
       </div>
     </div>
 
     <div id="tab-s" class="section hidden">
       <div class="card">
-        <h3>Расписание уроков</h3>
+        <h3>Расписание</h3>
         <div id="scheduleBox"></div>
         <div id="t-sch" class="hidden">
           <hr>
@@ -115,8 +104,8 @@
             <option value="Пн">Понедельник</option><option value="Вт">Вторник</option>
             <option value="Ср">Среда</option><option value="Чт">Четверг</option><option value="Пт">Пятница</option>
           </select>
-          <textarea id="schText" placeholder="1. Математика&#10;2. Физика..."></textarea>
-          <button onclick="saveSch()">Обновить расписание</button>
+          <textarea id="schText" placeholder="1. Предмет..."></textarea>
+          <button onclick="saveSch()">Обновить</button>
         </div>
       </div>
     </div>
@@ -124,7 +113,8 @@
 </div>
 
 <script>
-  const firebaseConfig = {
+  // Настройки Firebase
+  var firebaseConfig = {
     apiKey: "AIzaSyCEo8QxfX8faFjUaQNwNlTXbvws7LgXAEs",
     authDomain: "school-diary-3798a.firebaseapp.com",
     databaseURL: "https://school-diary-3798a.firebaseapp.com",
@@ -132,33 +122,33 @@
   };
 
   firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth(), db = firebase.database();
-  let u = { uid: "", role: "", class: "", email: "" };
-  const subs = ["Математика", "Русский язык", "Физика", "Химия", "История", "Английский", "География"];
+  var auth = firebase.auth();
+  var db = firebase.database();
+  var u = { uid: "", role: "", class: "", email: "" };
+  var subs = ["Математика", "Русский язык", "Физика", "Химия", "История", "Английский"];
 
-  // Время звонков (пример)
-  const bellSchedule = [
-    {s:"08:30", e:"09:15"}, {s:"09:25", e:"10:10"}, {s:"10:25", e:"11:10"},
-    {s:"11:25", e:"12:10"}, {s:"12:20", e:"13:05"}, {s:"13:15", e:"14:00"}
-  ];
-
+  // Вход
   function doAuth() {
-    const e = document.getElementById("email").value, p = document.getElementById("pass").value;
-    const r = document.getElementById("role").value, c = document.getElementById("cN").value + document.getElementById("cL").value;
-    auth.signInWithEmailAndPassword(e, p).then(res => {
+    var e = document.getElementById("email").value;
+    var p = document.getElementById("pass").value;
+    var r = document.getElementById("role").value;
+    var c = document.getElementById("cN").value + document.getElementById("cL").value;
+    
+    auth.signInWithEmailAndPassword(e, p).then(function(res) {
       db.ref("users/" + res.user.uid).update({ role: r, class: c, email: e });
-    }).catch(() => {
-      auth.createUserWithEmailAndPassword(e, p).then(res => {
+    }).catch(function() {
+      auth.createUserWithEmailAndPassword(e, p).then(function(res) {
         db.ref("users/" + res.user.uid).set({ role: r, class: c, email: e });
       });
     });
   }
 
-  auth.onAuthStateChanged(user => {
+  auth.onAuthStateChanged(function(user) {
     if (user) {
-      db.ref("users/" + user.uid).on("value", snap => {
-        if (snap.val()) {
-          u = snap.val(); u.uid = user.uid;
+      db.ref("users/" + user.uid).on("value", function(snap) {
+        var data = snap.val();
+        if (data) {
+          u = data; u.uid = user.uid;
           initApp();
         }
       });
@@ -170,13 +160,14 @@
     document.getElementById("appBox").classList.remove("hidden");
     document.getElementById("exitBtn").classList.remove("hidden");
     document.getElementById("timer").classList.remove("hidden");
-    document.getElementById("topTitle").innerText = u.class + " | " + u.role;
+    document.getElementById("topTitle").innerText = u.email + " (" + u.class + ")";
 
-    let opt = subs.map(s => <option value="${s}">${s}</option>).join("");
+    var opt = "";
+    for(var i=0; i<subs.length; i++) opt += "<option value='"+subs[i]+"'>"+subs[i]+"</option>";
     document.getElementById("mSub").innerHTML = opt;
     document.getElementById("hSub").innerHTML = opt;
 
-    if (u.role === "teacher") {
+    if (u.role == "teacher") {
       document.getElementById("t-view").classList.remove("hidden");
       document.getElementById("t-hw").classList.remove("hidden");
       document.getElementById("t-sch").classList.remove("hidden");
@@ -186,25 +177,24 @@
       loadMyMarks();
     }
     loadSch();
-    startTimer();
   }
 
   function showTab(id) {
-    document.querySelectorAll(".section").forEach(s => s.classList.add("hidden"));
+    var tabs = document.getElementsByClassName("section");
+    for(var i=0; i<tabs.length; i++) tabs[i].classList.add("hidden");
     document.getElementById(id).classList.remove("hidden");
   }
 
-  // --- ОЦЕНКИ И КОММЕНТАРИИ ---
   function loadClassList() {
-    db.ref("users").orderByChild("class").equalTo(u.class).on("value", snap => {
-      let html = "";
-      snap.forEach(c => {
-        if (c.val().role === "student") {
-html += <div class="flex" style="margin-bottom:8px">
-            <span style="flex:1; font-size:14px">${c.val().email.split('@')[0]}</span>
-            <input id="in_${c.key}" type="number" style="width:50px; margin:0" placeholder="5">
-            <button onclick="addMark('${c.key}')" style="width:50px; margin:0">ОК</button>
-          </div>;
+    db.ref("users").orderByChild("class").equalTo(u.class).on("value", function(snap) {
+var html = "";
+      snap.forEach(function(child) {
+        var s = child.val();
+        if (s.role == "student") {
+          html += "<div class='flex' style='margin-bottom:10px'>" +
+            "<span style='flex:1'>"+s.email.split('@')[0]+"</span>" +
+            "<input id='in_"+child.key+"' type='number' style='width:60px; margin:0' placeholder='5'>" +
+            "<button onclick='addMark(\""+child.key+"\")' style='width:60px; margin:0'>ОК</button></div>";
         }
       });
       document.getElementById("sList").innerHTML = html;
@@ -212,93 +202,64 @@ html += <div class="flex" style="margin-bottom:8px">
   }
 
   function addMark(sid) {
-    const v = document.getElementById("in_"+sid).value, d = document.getElementById("mDate").value;
-    const s = document.getElementById("mSub").value, c = document.getElementById("mComm").value;
+    var v = document.getElementById("in_"+sid).value;
+    var d = document.getElementById("mDate").value;
+    var s = document.getElementById("mSub").value;
+    var c = document.getElementById("mComm").value;
     if (v && d) {
       db.ref("marks/" + sid + "/" + s).push({ v: parseInt(v), d: d, note: c });
       alert("Оценка выставлена");
-      document.getElementById("in_"+sid).value = "";
     } else alert("Укажи дату!");
   }
 
   function loadMyMarks() {
-    db.ref("marks/" + u.uid).on("value", snap => {
-      let html = "";
-      snap.forEach(sub => {
-        let ms = [], sum = 0;
-        sub.forEach(m => {
-          let mark = m.val();
-          ms.push(<span class="mark-item">
-            <span class="mark-badge" title="${mark.d} ${mark.note ? '('+mark.note+')' : ''}">${mark.v}</span>
-          </span>);
-          sum += mark.v;
+    db.ref("marks/" + u.uid).on("value", function(snap) {
+      var html = "";
+      snap.forEach(function(sub) {
+        var ms = "", sum = 0, count = 0;
+        sub.forEach(function(m) {
+          var mark = m.val();
+          ms += "<span class='mark-badge' title='"+mark.d+" "+(mark.note||"")+"'>"+mark.v+"</span>";
+          sum += mark.v; count++;
         });
-        let avg = (sum / ms.length).toFixed(1);
-        html += <p><b>${sub.key}:</b> ${ms.join("")} <span class="avg">ср: ${avg}</span></p>;
+        var avg = (sum / count).toFixed(1);
+        html += "<p><b>"+sub.key+":</b> "+ms+" <span class='avg'>средний: "+avg+"</span></p>";
       });
       document.getElementById("myMarks").innerHTML = html || "Оценок пока нет";
     });
   }
 
-  // --- РАСПИСАНИЕ ---
-  function saveSch() {
-    const day = document.getElementById("schDay").value;
-    const txt = document.getElementById("schText").value;
-    db.ref("schedules/" + u.class + "/" + day).set(txt);
-    alert("Расписание обновлено");
-  }
-
-  function loadSch() {
-    db.ref("schedules/" + u.class).on("value", snap => {
-      let html = "";
-      snap.forEach(d => {
-        html += <div style="margin-bottom:10px"><b>${d.key}:</b><pre style="margin:5px; font-family:sans-serif; color:#444">${d.val()}</pre></div>;
-      });
-      document.getElementById("scheduleBox").innerHTML = html || "Расписание не заполнено";
-    });
-  }
-
-  // --- ТАЙМЕР УРОКА ---
-  function startTimer() {
-    setInterval(() => {
-      const now = new Date();
-      const cur = now.getHours().toString().padStart(2,'0') + ":" + now.getMinutes().toString().padStart(2,'0');
-      let status = "Уроки окончены";
-      
-      for (let i=0; i<bellSchedule.length; i++) {
-        let b = bellSchedule[i];
-        if (cur >= b.s && cur <= b.e) {
-          let diff = Math.floor((new Date(now.toDateString() + " " + b.e) - now) / 60000);
-          status = Урок ${i+1}: до конца ${diff} мин;
-          break;
-        } else if (i < bellSchedule.length-1 && cur > b.e && cur < bellSchedule[i+1].s) {
-          let diff = Math.floor((new Date(now.toDateString() + " " + bellSchedule[i+1].s) - now) / 60000);
-          status = Перемена: до урока ${diff} мин;
-          break;
-        }
-      }
-      document.getElementById("timer").innerText = status;
-    }, 10000);
-  }
-
-  // --- ДЗ ---
   function saveHW() {
-    const d = document.getElementById("hDate").value, s = document.getElementById("hSub").value, t = document.getElementById("hText").value;
+    var d = document.getElementById("hDate").value;
+    var s = document.getElementById("hSub").value;
+    var t = document.getElementById("hText").value;
     if (d && t) db.ref("hw/" + u.class + "/" + d + "/" + s).set(t);
   }
 
   function loadHW() {
-    const d = document.getElementById("hDate").value;
-    db.ref("hw/" + u.class + "/" + d).on("value", snap => {
-      let h = "";
-      snap.forEach(c => h += <p><b>${c.key}:</b> ${c.val()}</p>);
+    var d = document.getElementById("hDate").value;
+    db.ref("hw/" + u.class + "/" + d).on("value", function(snap) {
+      var h = "";
+      snap.forEach(function(c) { h += "<p><b>"+c.key+":</b> "+c.val()+"</p>"; });
       document.getElementById("hwContent").innerHTML = h || "Ничего не задано";
     });
   }
 
-  function exitApp() { auth.signOut().then(() => location.reload()); }
-</script>
+  function saveSch() {
+    var day = document.getElementById("schDay").value;
+    var txt = document.getElementById("schText").value;
+    db.ref("schedules/" + u.class + "/" + day).set(txt);
+  }
 
+  function loadSch() {
+    db.ref("schedules/" + u.class).on("value", function(snap) {
+      var h = "";
+      snap.forEach(function(d) { h += "<div><b>"+d.key+":</b><pre style='font-family:sans-serif'>"+d.val()+"</pre></div>"; });
+      document.getElementById("scheduleBox").innerHTML = h || "Пусто";
+    });
+  }
+
+  function exitApp() { auth.signOut().then(function() { location.reload(); }); }
+</script>
 </body>
 </html>
-
