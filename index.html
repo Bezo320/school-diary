@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EDiary Premium</title>
+  <title>EDiary Premium | Электронный Дневник</title>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -15,13 +15,12 @@
       --m5: #22c55e; --m4: #a855f7; --m3: #eab308; --m2: #ef4444;
     }
     body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; }
-    header { background: var(--main); color: #fff; padding: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    header { background: var(--main); color: #fff; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
     .container { max-width: 500px; margin: 20px auto; padding: 0 15px; }
     
     .card { background: var(--card); padding: 25px; border-radius: 24px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
     h2, h3 { margin-top: 0; color: var(--text); }
 
-    /* Поля ввода и кнопки */
     input, select, textarea { 
       width: 100%; padding: 14px 18px; margin: 10px 0; border-radius: 16px; 
       border: 2px solid #e2e8f0; font-size: 16px; transition: 0.3s; box-sizing: border-box;
@@ -32,14 +31,11 @@
       background: var(--main); color: white; font-weight: 700; cursor: pointer; transition: 0.2s;
     }
     button:hover { background: var(--main-dark); transform: translateY(-1px); }
-    button:active { transform: translateY(0); }
 
-    /* Навигация */
-    .nav { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
-    .nav button { background: #e2e8f0; color: var(--text); padding: 10px 20px; font-size: 14px; white-space: nowrap; margin: 0; }
+    .nav { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; }
+    .nav button { background: #e2e8f0; color: var(--text); padding: 10px 20px; font-size: 14px; white-space: nowrap; margin: 0; flex: 1; }
     .nav button.active { background: var(--main); color: white; }
 
-    /* Оценки */
     .mark-badge { 
       display: inline-block; width: 32px; height: 32px; line-height: 32px; text-align: center;
       border-radius: 10px; color: white; font-weight: bold; margin-right: 6px; margin-bottom: 5px;
@@ -49,7 +45,7 @@
     .avg-label { font-size: 0.85em; color: var(--gray); font-weight: 600; margin-left: 5px; }
 
     .hidden { display: none !important; }
-    .flex { display: flex; gap: 10px; }
+    .flex { display: flex; gap: 10px; align-items: center; }
     #timer-val { font-weight: bold; font-size: 14px; background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 10px; }
   </style>
 </head>
@@ -57,15 +53,15 @@
 
 <header>
   <div>
-    <div id="topTitle" style="font-size: 18px;">EDiary Premium</div>
-    <div id="timer-box" class="hidden">🕒 <span id="timer-val">Урок идет</span></div>
+    <div id="topTitle" style="font-size: 18px; font-weight: bold;">EDiary Premium</div>
+    <div id="timer-box" class="hidden">🕒 <span id="timer-val">Загрузка...</span></div>
   </div>
   <button onclick="exitApp()" id="exitBtn" class="hidden" style="width:auto; background:#ef4444; margin:0; padding:8px 16px;">Выход</button>
 </header>
 
 <div class="container">
   <div id="loginBox" class="card">
-    <h2 style="text-align:center">Добро пожаловать</h2>
+    <h2 style="text-align:center">Вход в систему</h2>
     <input id="email" type="email" placeholder="Ваш Email">
     <input id="pass" type="password" placeholder="Пароль">
     <select id="role">
@@ -74,16 +70,17 @@
     </select>
     <div class="flex">
       <select id="cN">
-        <option value="1">1 класс</option><option value="2">2 класс</option><option value="3">3 класс</option>
-        <option value="4">4 класс</option><option value="5">5 класс</option><option value="6">6 класс</option>
-<option value="7">7 класс</option><option value="8">8 класс</option><option value="9">9 класс</option>
-        <option value="10">10 класс</option><option value="11">11 класс</option>
+        <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+        <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+        <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+<option value="10">10</option><option value="11">11</option>
       </select>
       <select id="cL">
         <option value="А">А</option><option value="Б">Б</option><option value="В">В</option><option value="Г">Г</option>
       </select>
+      <span style="white-space: nowrap;">класс</span>
     </div>
-    <button onclick="doAuth()">ВОЙТИ В СИСТЕМУ</button>
+    <button onclick="doAuth()">ВОЙТИ / СОЗДАТЬ</button>
   </div>
 
   <div id="appBox" class="hidden">
@@ -99,12 +96,12 @@
           <h3>Журнал класса</h3>
           <input type="date" id="mDate">
           <select id="mSub"></select>
-          <input type="text" id="mComm" placeholder="За что оценка? (тема)">
+          <input type="text" id="mComm" placeholder="Тема урока">
           <div id="sList" style="margin-top:15px"></div>
         </div>
         <div id="s-view" class="hidden">
           <h3>Мои оценки</h3>
-          <div id="myMarks"></div>
+          <div id="myMarks">Загрузка...</div>
         </div>
       </div>
     </div>
@@ -113,7 +110,7 @@
       <div class="card">
         <h3>Домашнее задание</h3>
         <input type="date" id="hDate" onchange="loadHW()">
-        <div id="hwContent" style="margin:15px 0; line-height: 1.6;"></div>
+        <div id="hwContent" style="margin:15px 0; line-height: 1.6; color: var(--gray);">Выберите дату...</div>
         <div id="t-hw" class="hidden">
           <hr style="opacity:0.1; margin:20px 0">
           <select id="hSub"></select>
@@ -125,15 +122,15 @@
 
     <div id="tab-s" class="section hidden">
       <div class="card">
-        <h3>Расписание уроков</h3>
+        <h3>Расписание</h3>
         <div id="scheduleBox"></div>
         <div id="t-sch" class="hidden">
           <hr style="opacity:0.1; margin:20px 0">
           <select id="schDay">
-            <option value="Пн">Понедельник</option><option value="Вт">Вторник</option>
-            <option value="Ср">Среда</option><option value="Чт">Четверг</option><option value="Пт">Пятница</option>
+            <option value="Понедельник">Понедельник</option><option value="Вторник">Вторник</option>
+            <option value="Среда">Среда</option><option value="Четверг">Четверг</option><option value="Пятница">Пятница</option>
           </select>
-          <textarea id="schText" rows="5" placeholder="1. Математика&#10;2. Русский..."></textarea>
+          <textarea id="schText" rows="5" placeholder="1. Математика&#10;2. Русский язык..."></textarea>
           <button onclick="saveSch()">Обновить расписание</button>
         </div>
       </div>
@@ -142,7 +139,7 @@
 </div>
 
 <script>
-  // КОНФИГ
+  // Используем ваш конфиг (API ключ и URL)
   const firebaseConfig = {
     apiKey: "AIzaSyCEo8QxfX8faFjUaQNwNlTXbvws7LgXAEs",
     authDomain: "school-diary-3798a.firebaseapp.com",
@@ -153,10 +150,17 @@
   firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();
   const db = firebase.database();
+  
   let u = { uid: "", role: "", class: "", email: "" };
-  const subs = ["Математика", "Русский язык", "Физика", "Химия", "История", "Английский", "География"];
+  const subs = ["Математика", "Русский язык", "Физика", "Химия", "История", "Английский", "География", "Биология", "Информатика"];
 
-  // ВХОД
+  // Установка сегодняшней даты в инпуты
+  window.onload = () => {
+    const today = new Date().toISOString().split('T')[0];
+    if(document.getElementById("mDate")) document.getElementById("mDate").value = today;
+    if(document.getElementById("hDate")) document.getElementById("hDate").value = today;
+  };
+
   function doAuth() {
     const e = document.getElementById("email").value;
     const p = document.getElementById("pass").value;
@@ -166,7 +170,7 @@
     if(!e || !p) return alert("Заполни поля!");
 
     auth.signInWithEmailAndPassword(e, p).then(res => {
-      db.ref("users/" + res.user.uid).update({ role: r, class: c, email: e });
+db.ref("users/" + res.user.uid).update({ role: r, class: c, email: e });
     }).catch(() => {
       auth.createUserWithEmailAndPassword(e, p).then(res => {
         db.ref("users/" + res.user.uid).set({ role: r, class: c, email: e });
@@ -182,14 +186,19 @@
           initApp();
         }
       });
+    } else {
+      document.getElementById("loginBox").classList.remove("hidden");
+      document.getElementById("appBox").classList.add("hidden");
+      document.getElementById("exitBtn").classList.add("hidden");
     }
   });
-function initApp() {
+
+  function initApp() {
     document.getElementById("loginBox").classList.add("hidden");
     document.getElementById("appBox").classList.remove("hidden");
     document.getElementById("exitBtn").classList.remove("hidden");
     document.getElementById("timer-box").classList.remove("hidden");
-    document.getElementById("topTitle").innerText = u.class + " | " + u.role.toUpperCase();
+    document.getElementById("topTitle").innerText = ${u.class} | ${u.role === 'teacher' ? 'УЧИТЕЛЬ' : 'УЧЕНИК'};
 
     let opt = subs.map(s => <option value="${s}">${s}</option>).join("");
     document.getElementById("mSub").innerHTML = opt;
@@ -199,12 +208,17 @@ function initApp() {
       document.getElementById("t-view").classList.remove("hidden");
       document.getElementById("t-hw").classList.remove("hidden");
       document.getElementById("t-sch").classList.remove("hidden");
+      document.getElementById("s-view").classList.add("hidden");
       loadClass();
     } else {
       document.getElementById("s-view").classList.remove("hidden");
+      document.getElementById("t-view").classList.add("hidden");
+      document.getElementById("t-hw").classList.add("hidden");
+      document.getElementById("t-sch").classList.add("hidden");
       loadMyMarks();
     }
     loadSch();
+    loadHW();
     updateTimer();
   }
 
@@ -220,21 +234,24 @@ function initApp() {
     db.ref("users").orderByChild("class").equalTo(u.class).on("value", snap => {
       let h = "";
       snap.forEach(c => {
-        if (c.val().role === "student") {
+        const userData = c.val();
+        if (userData.role === "student") {
           h += <div class="flex" style="margin-bottom:12px; background:#f1f5f9; padding:10px; border-radius:12px">
-            <span style="flex:1; font-weight:600">${c.val().email.split('@')[0]}</span>
-            <input id="in_${c.key}" type="number" style="width:60px; margin:0; padding:8px" placeholder="5">
+            <span style="flex:1; font-weight:600; font-size:14px">${userData.email.split('@')[0]}</span>
+            <input id="in_${c.key}" type="number" style="width:60px; margin:0; padding:8px" placeholder="5" min="2" max="5">
             <button onclick="addMark('${c.key}')" style="width:50px; margin:0; padding:8px">ОК</button>
           </div>;
         }
       });
-      document.getElementById("sList").innerHTML = h;
+      document.getElementById("sList").innerHTML = h || "В этом классе пока нет учеников";
     });
   }
 
   function addMark(sid) {
-    const v = document.getElementById("in_"+sid).value, d = document.getElementById("mDate").value;
-    const s = document.getElementById("mSub").value, n = document.getElementById("mComm").value;
+    const v = document.getElementById("in_"+sid).value;
+    const d = document.getElementById("mDate").value;
+    const s = document.getElementById("mSub").value;
+    const n = document.getElementById("mComm").value;
     if (v && d) {
       db.ref("marks/" + sid + "/" + s).push({ v: parseInt(v), d: d, n: n });
       alert("Оценка сохранена!");
@@ -245,358 +262,104 @@ function initApp() {
   function loadMyMarks() {
     db.ref("marks/" + u.uid).on("value", snap => {
       let h = "";
+      if(!snap.exists()) {
+          document.getElementById("myMarks").innerHTML = "Оценок пока нет";
+return;
+      }
       snap.forEach(sub => {
         let ms = "", sum = 0, count = 0;
         sub.forEach(m => {
           let mark = m.val();
-          let color = mark.v >= 5 ? 'm-5' : (mark.v == 4 ? 'm-4' : (mark.v == 3 ? 'm-3' : 'm-2'));
-          ms += <span class="mark-badge ${color}" title="${mark.d} ${mark.n||''}">${mark.v}</span>;
+          let colorClass = mark.v >= 5 ? 'm-5' : (mark.v == 4 ? 'm-4' : (mark.v == 3 ? 'm-3' : 'm-2'));
+          ms += <span class="mark-badge ${colorClass}" title="${mark.d} ${mark.n || ''}">${mark.v}</span>;
           sum += mark.v; count++;
         });
         h += <div style="margin-bottom:15px">
-          <div style="font-weight:bold; margin-bottom:5px">${sub.key} <span class="avg-label">Средний: ${(sum/count).toFixed(1)}</span></div>
+          <div style="font-weight:bold; margin-bottom:5px">${sub.key} <span class="avg-label">Средний: ${(sum/count).toFixed(2)}</span></div>
           ${ms}
         </div>;
       });
-      document.getElementById("myMarks").innerHTML = h || "Пока нет оценок";
+      document.getElementById("myMarks").innerHTML = h;
     });
   }
 
   // ДЗ
   function saveHW() {
-    const d = document.getElementById("hDate").value, s = document.getElementById("hSub").value, t = document.getElementById("hText").value;
-    if (d && t) db.ref("hw/" + u.class + "/" + d + "/" + s).set(t).then(() => alert("ДЗ сохранено!"));
+    const d = document.getElementById("hDate").value;
+    const s = document.getElementById("hSub").value;
+    const t = document.getElementById("hText").value;
+    if (d && t) {
+        db.ref("hw/" + u.class + "/" + d + "/" + s).set(t).then(() => {
+            alert("ДЗ сохранено!");
+            document.getElementById("hText").value = "";
+        });
+    } else alert("Заполните текст ДЗ и дату");
   }
 
   function loadHW() {
     const d = document.getElementById("hDate").value;
+    if(!d) return;
     db.ref("hw/" + u.class + "/" + d).on("value", snap => {
       let h = "";
-      snap.forEach(c => h += <div style="margin-bottom:10px"><b>${c.key}:</b><br>${c.val()}</div>);
-      document.getElementById("hwContent").innerHTML = h || "На этот день ничего не задано";
+      if(snap.exists()){
+        snap.forEach(c => h += <div style="margin-bottom:10px; padding:10px; background:#fff; border-radius:10px; border-left: 4px solid var(--main)"><b>${c.key}:</b><br>${c.val()}</div>);
+      } else {
+        h = "На этот день ничего не задано";
+      }
+      document.getElementById("hwContent").innerHTML = h;
     });
   }
-// РАСПИСАНИЕ
+
+  // РАСПИСАНИЕ
   function saveSch() {
-    const day = document.getElementById("schDay").value, txt = document.getElementById("schText").value;
-    db.ref("schedules/" + u.class + "/" + day).set(txt).then(() => alert("Обновлено!"));
+    const day = document.getElementById("schDay").value;
+    const txt = document.getElementById("schText").value;
+    if(txt) db.ref("schedules/" + u.class + "/" + day).set(txt).then(() => alert("Обновлено!"));
   }
 
   function loadSch() {
     db.ref("schedules/" + u.class).on("value", snap => {
       let h = "";
-      snap.forEach(d => h += <div style="margin-bottom:15px"><b>${d.key}</b><pre style="margin:5px 0; font-family:inherit; color:var(--gray)">${d.val()}</pre></div>);
-      document.getElementById("scheduleBox").innerHTML = h || "Расписание не заполнено";
+      if(snap.exists()){
+        snap.forEach(d => h += <div style="margin-bottom:15px" class="schedule-day"><b>${d.key}</b><pre style="margin:5px 0; font-family:inherit; color:var(--gray); white-space: pre-wrap;">${d.val()}</pre></div>);
+      } else {
+        h = "Расписание еще не создано";
+      }
+      document.getElementById("scheduleBox").innerHTML = h;
     });
   }
 
-  // ТАЙМЕР
+  // ТАЙМЕР УРОКОВ
   function updateTimer() {
-    const schedule = [{s:"08:30", e:"09:15"}, {s:"09:25", e:"10:10"}, {s:"10:25", e:"11:10"}, {s:"11:25", e:"12:10"}, {s:"12:20", e:"13:05"}];
-    setInterval(() => {
+    const schedule = [
+        {s:"08:30", e:"09:15"}, {s:"09:25", e:"10:10"}, 
+        {s:"10:25", e:"11:10"}, {s:"11:25", e:"12:10"}, 
+        {s:"12:20", e:"13:05"}, {s:"13:15", e:"14:00"}
+    ];
+    
+    function check() {
       const now = new Date();
       const time = now.getHours().toString().padStart(2,'0') + ":" + now.getMinutes().toString().padStart(2,'0');
       let status = "Уроки окончены";
+      
       for(let i=0; i<schedule.length; i++) {
-        if(time >= schedule[i].s && time <= schedule[i].e) { status = Идет ${i+1} урок; break; }
-        if(i < schedule.length-1 && time > schedule[i].e && time < schedule[i+1].s) { status = Перемена; break; }
+        if(time >= schedule[i].s && time <= schedule[i].e) { 
+            status = Идет ${i+1} урок; break; 
+        }
+        if(i < schedule.length-1 && time > schedule[i].e && time < schedule[i+1].s) { 
+            status = "Перемена"; break; 
+        }
       }
       document.getElementById("timer-val").innerText = status;
-    }, 5000);
-  }
-
-  function exitApp() { auth.signOut().then(() => location.reload()); }
-</script>
-</body>
-</html>
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8">
-  <title>Электронный дневник - Система</title>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <style>
-    :root { 
-      --bg:#fff7ed; --card:#ffffff; --primary:#f97316; --text:#1f2937; 
-      --m5:#22c55e; --m4:#a855f7; --m3:#eab308; --m2:#ef4444;
     }
-    body.dark { --bg:#1f2937; --card:#111827; --primary:#fb923c; --text:#f9fafb; }
-    body { margin:0; font-family:sans-serif; background:var(--bg); color:var(--text); transition:.3s; }
-    
-    header { 
-      background:var(--primary); color:white; padding:15px; 
-      display:flex; justify-content:space-between; align-items:center;
-      position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-
-    .container { max-width:1000px; margin:auto; padding:20px; }
-    .card { background:var(--card); padding:20px; border-radius:18px; margin-bottom:20px; box-shadow:0 4px 15px rgba(0,0,0,.08); }
-    
-    .nav-tabs { display:flex; gap:10px; margin-bottom:20px; overflow-x:auto; padding-bottom: 5px; }
-    .nav-tabs button { flex:1; white-space:nowrap; background:#e5e7eb; color:black; border:none; padding:12px; cursor:pointer; border-radius:12px; font-weight: bold; transition: 0.2s; }
-    .nav-tabs button.active { background:var(--primary); color:white; }
-    
-    input, select, button, textarea { padding:14px; margin:5px 0; width:100%; border-radius:12px; border:1px solid #ddd; box-sizing:border-box; outline: none; font-size: 16px; }
-    button { background:var(--primary); color:white; border:none; cursor:pointer; font-weight:bold; transition: 0.2s; }
-    button:hover { opacity: 0.9; transform: translateY(-1px); }
-    
-    table { width:100%; border-collapse:collapse; margin-top:10px; }
-    th, td { padding:12px; border-bottom:1px solid #eee; text-align:left; }
-    
-    .hidden { display:none !important; }
-
-    /* Оценки */
-    .mark-badge { 
-      display:inline-block; width: 35px; height: 35px; line-height: 35px; 
-      text-align: center; border-radius:10px; font-weight:bold; color:white; 
-    }
-    .m5 { background: var(--m5); } .m4 { background: var(--m4); }
-    .m3 { background: var(--m3); } .m2 { background: var(--m2); }
-
-    /* Таймер */
-    #lessonTimer { font-size: 0.8em; background: rgba(0,0,0,0.1); padding: 5px 10px; border-radius: 8px; margin-left: 10px; }
-    
-    .avg-val { font-weight: bold; font-size: 1.1em; color: var(--primary); }
-    .schedule-day { margin-bottom: 15px; padding-left: 10px; border-left: 4px solid var(--primary); }
-  </style>
-</head>
-<body>
-
-<header>
-  <span>
-    📘 <b>Дневник:</b> <span id="userDisplay">Загрузка...</span>
-    <span id="lessonTimer" class="hidden"></span>
-  </span>
-  <button onclick="toggleTheme()" style="width:auto; padding:5px 12px; border-radius: 10px;">🌗</button>
-</header>
-
-<div class="container">
-  <div id="loginPage" class="card">
-    <h2 style="text-align: center;">Вход в систему</h2>
-    <input id="email" placeholder="Email">
-    <input id="password" type="password" placeholder="Пароль">
-    <select id="role">
-      <option value="student">Я Ученик</option>
-      <option value="teacher">Я Учитель</option>
-    </select>
-    <input id="className" placeholder="Класс (например, 10А)">
-    <button onclick="loginUser()">Войти</button>
-  </div>
-
-  <div id="app" class="hidden">
-    <div class="nav-tabs">
-      <button onclick="showTab('tab-marks')" id="btn-marks" class="active">Оценки</button>
-      <button onclick="showTab('tab-schedule')" id="btn-schedule">Расписание</button>
-      <button onclick="showTab('tab-quarter')" id="btn-quarter">Итоги</button>
-      <button onclick="logout()" style="background:#ef4444; color:white; flex: 0.4;">Выход</button>
-    </div>
-<div id="tab-marks" class="tab-content">
-      <div id="teacherPanel" class="card hidden">
-        <h3>Панель учителя: Поставить оценку</h3>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <select id="subjectSelect"></select> 
-            <input id="markInput" type="number" min="2" max="5" placeholder="Оценка (2-5)">
-        </div>
-        <input id="topicInput" placeholder="Тема урока (например, Контрольная работа)">
-        <button onclick="addMark()">Сохранить оценку</button>
-      </div>
-      
-      <div class="card">
-        <h3>Журнал последних оценок</h3>
-        <div id="marksList"></div>
-      </div>
-    </div>
-
-    <div id="tab-schedule" class="tab-content hidden">
-      <div class="card">
-        <h3>Расписание занятий</h3>
-        <div id="scheduleContent"></div>
-      </div>
-    </div>
-
-    <div id="tab-quarter" class="tab-content hidden">
-      <div class="card">
-        <h3>Аналитика успеваемости</h3>
-        <table>
-          <thead><tr><th>Предмет</th><th>Средний балл</th><th>Прогноз</th></tr></thead>
-          <tbody id="quarterTable"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyCEo8QxfX8faFjUaQNwNlTXbvws7LgXAEs",
-    authDomain: "school-diary-3798a.firebaseapp.com",
-    databaseURL: "https://school-diary-3798a.firebaseapp.com",
-    projectId: "school-diary-3798a"
-  };
-
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const db = firebase.database();
-
-  const schedule = {
-    'Понедельник': ['Математика', 'Русский язык', 'Физика'],
-    'Вторник': ['История', 'Английский', 'Физкультура'],
-    'Среда': ['Алгебра', 'Литература', 'Информатика'],
-    'Четверг': ['Химия', 'Биология', 'География'],
-    'Пятница': ['Обществознание', 'ОБЖ', 'Геометрия']
-  };
-
-  const bellSchedule = [
-    {s: "08:30", e: "09:15"}, {s: "09:25", e: "10:10"}, {s: "10:25", e: "11:10"},
-    {s: "11:25", e: "12:10"}, {s: "12:20", e: "13:05"}, {s: "13:15", e: "14:00"}
-  ];
-
-  let currentUser = null;
-  let userRole = localStorage.getItem('role') || 'student';
-  let userClass = localStorage.getItem('class') || '';
-
-  function toggleTheme() {
-    document.body.classList.toggle('dark');
-    localStorage.setItem('dark', document.body.classList.contains('dark'));
-  }
-  if(localStorage.getItem('dark')==='true') document.body.classList.add('dark');
-
-  function showTab(tabId) {
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
-    document.querySelectorAll('.nav-tabs button').forEach(b => b.classList.remove('active'));
-    document.getElementById(tabId).classList.remove('hidden');
-    document.getElementById('btn-' + tabId.replace('tab-', '')).classList.add('active');
+    check();
+    setInterval(check, 30000);
   }
 
-  function loginUser() {
-    const email = document.getElementById('email').value;
-    const pass = document.getElementById('password').value;
-    if(!email || !pass) return alert("Введите данные!");
-    
-    userRole = document.getElementById('role').value;
-    userClass = document.getElementById('className').value || "Общий";
-    
-    localStorage.setItem('role', userRole);
-    localStorage.setItem('class', userClass);
-
-    auth.signInWithEmailAndPassword(email, pass)
-      .catch(() => auth.createUserWithEmailAndPassword(email, pass));
-  }
-
-  function logout() {
-    auth.signOut();
-    localStorage.clear();
-    location.reload();
-  }
-
-  auth.onAuthStateChanged(user => {
-    if (user) {
-      currentUser = user;
-      document.getElementById('loginPage').classList.add('hidden');
-      document.getElementById('app').classList.remove('hidden');
-      document.getElementById('userDisplay').textContent = user.email.split('@')[0] + ' (' + userClass + ')';
-      document.getElementById('lessonTimer').classList.remove('hidden');
-if (userRole === 'teacher') {
-        document.getElementById('teacherPanel').classList.remove('hidden');
-        fillSubjectSelect();
-      }
-      
-      initApp();
-      startTimer();
-    } else {
-      document.getElementById('loginPage').classList.remove('hidden');
-      document.getElementById('app').classList.add('hidden');
-    }
-  });
-
-  function fillSubjectSelect() {
-    const select = document.getElementById('subjectSelect');
-    const allSubjects = new Set();
-    for (let day in schedule) { schedule[day].forEach(s => allSubjects.add(s)); }
-    select.innerHTML = '';
-    allSubjects.forEach(s => { select.innerHTML += '<option value="' + s + '">' + s + '</option>'; });
-  }
-
-  function addMark() {
-    const subject = document.getElementById('subjectSelect').value;
-    const topic = document.getElementById('topicInput').value;
-    const mark = document.getElementById('markInput').value;
-    if(!topic || !mark) return alert('Введите тему и оценку!');
-
-    db.ref('marks/' + userClass).push({
-      subject: subject,
-      topic: topic,
-      mark: Number(mark),
-      date: new Date().toLocaleDateString(),
-      student: currentUser.email
-    });
-
-    document.getElementById('topicInput').value = '';
-    document.getElementById('markInput').value = '';
-  }
-
-  function startTimer() {
-    setInterval(() => {
-      const now = new Date();
-      const cur = now.getHours().toString().padStart(2,'0') + ":" + now.getMinutes().toString().padStart(2,'0');
-      let status = "Уроки окончены";
-      for (let i=0; i<bellSchedule.length; i++) {
-        let b = bellSchedule[i];
-        if (cur >= b.s && cur <= b.e) { status = Идет ${i+1} урок; break; }
-        else if (i < bellSchedule.length-1 && cur > b.e && cur < bellSchedule[i+1].s) { status = Перемена; break; }
-      }
-      document.getElementById('lessonTimer').textContent = status;
-    }, 1000);
-  }
-
-  function initApp() {
-    const schDiv = document.getElementById('scheduleContent');
-    schDiv.innerHTML = '';
-    for (let day in schedule) {
-      schDiv.innerHTML += <div class="schedule-day"><b>${day}:</b> ${schedule[day].join(', ')}</div>;
-    }
-
-    db.ref('marks/' + userClass).on('value', snap => {
-      const marksList = document.getElementById('marksList');
-      const quarterTable = document.getElementById('quarterTable');
-      marksList.innerHTML = '';
-      quarterTable.innerHTML = '';
-      
-      let allMarks = [];
-      snap.forEach(child => { allMarks.push(child.val()); });
-
-      allMarks.slice().reverse().forEach(data => {
-        let mClass = 'm' + Math.round(data.mark);
-        marksList.innerHTML += 
-          <div style="display: flex; align-items: center; gap: 15px; border-bottom: 1px solid rgba(0,0,0,0.05); padding: 12px 0;">
-            <div class="mark-badge ${mClass}">${data.mark}</div>
-            <div>
-              <div style="font-weight: bold;">${data.subject}</div>
-              <div style="font-size: 0.85em; color: gray;">${data.date} • ${data.topic}</div>
-            </div>
-          </div>;
-      });
-
-      const stats = {};
-      allMarks.forEach(m => {
-        if (!stats[m.subject]) stats[m.subject] = { sum: 0, count: 0 };
-        stats[m.subject].sum += m.mark;
-        stats[m.subject].count++;
-      });
-
-      for (let sub in stats) {
-        let avg = (stats[sub].sum / stats[sub].count).toFixed(2);
-        let color = avg >= 4.5 ? 'var(--m5)' : (avg >= 3.5 ? 'var(--m4)' : 'var(--m3)');
-        quarterTable.innerHTML += 
-          <tr>
-            <td>${sub}</td>
-            <td class="avg-val" style="color: ${color}">${avg}</td>
-            <td><b>${Math.round(avg)}</b></td>
-          </tr>;
-      }
-    });
+  function exitApp() { 
+    auth.signOut().then(() => {
+        location.reload();
+    }); 
   }
 </script>
 </body>
