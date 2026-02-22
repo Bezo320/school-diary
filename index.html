@@ -18,38 +18,19 @@
     body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; }
     header { background: var(--main); color: #fff; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
     .container { max-width: 500px; margin: 20px auto; padding: 0 15px; }
-    
     .card { background: var(--card); padding: 25px; border-radius: 24px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); position: relative; }
-    h2, h3 { margin-top: 0; color: var(--text); }
-
-    input, select, textarea { 
-      width: 100%; padding: 14px 18px; margin: 10px 0; border-radius: 16px; 
-      border: 2px solid #e2e8f0; font-size: 16px; transition: 0.3s; box-sizing: border-box;
-    }
-    input:focus { border-color: var(--main); outline: none; }
-    button { 
-      width: 100%; padding: 14px; margin-top: 10px; border-radius: 16px; border: none;
-      background: var(--main); color: white; font-weight: 700; cursor: pointer; transition: 0.2s;
-    }
-    button:disabled { background: #ccc; cursor: not-allowed; }
-    button:hover:not(:disabled) { background: var(--main-dark); transform: translateY(-1px); }
-    
+    input, select, textarea { width: 100%; padding: 14px 18px; margin: 10px 0; border-radius: 16px; border: 2px solid #e2e8f0; font-size: 16px; box-sizing: border-box; }
+    button { width: 100%; padding: 14px; margin-top: 10px; border-radius: 16px; border: none; background: var(--main); color: white; font-weight: 700; cursor: pointer; transition: 0.2s; }
+    button:disabled { background: #ccc; }
     .nav { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; }
-    .nav button { background: #e2e8f0; color: var(--text); padding: 10px 20px; font-size: 14px; white-space: nowrap; margin: 0; flex: 1; }
+    .nav button { background: #e2e8f0; color: var(--text); padding: 10px 20px; flex: 1; }
     .nav button.active { background: var(--main); color: white; }
-
     .hw-img { width: 100%; border-radius: 12px; margin-top: 10px; cursor: pointer; border: 1px solid #eee; }
-    .mark-badge { 
-      display: inline-block; width: 32px; height: 32px; line-height: 32px; text-align: center;
-      border-radius: 10px; color: white; font-weight: bold; margin-right: 6px; margin-bottom: 5px;
-    }
-    .m-5 { background: var(--m5); } .m-4 { background: var(--m4); }
-    .m-3 { background: var(--m3); } .m-2 { background: var(--m2); }
-    
+    .mark-badge { display: inline-block; width: 32px; height: 32px; line-height: 32px; text-align: center; border-radius: 10px; color: white; font-weight: bold; margin-right: 6px; }
+    .m-5 { background: var(--m5); } .m-4 { background: var(--m4); } .m-3 { background: var(--m3); } .m-2 { background: var(--m2); }
     .notification-dot { position: absolute; top: 10px; right: 10px; width: 10px; height: 10px; background: red; border-radius: 50%; display: none; }
     .hidden { display: none !important; }
     .flex { display: flex; gap: 10px; align-items: center; }
-    #timer-val { font-weight: bold; font-size: 14px; background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 10px; }
   </style>
 </head>
 <body>
@@ -68,7 +49,7 @@
     <input id="email" type="email" placeholder="Email">
     <input id="pass" type="password" placeholder="Пароль">
     <select id="role">
-<option value="student">Я Ученик</option>
+      <option value="student">Я Ученик</option>
       <option value="teacher">Я Учитель</option>
     </select>
     <div class="flex">
@@ -76,11 +57,10 @@
       <select id="cL"><option value="А">А</option><option value="Б">Б</option><option value="В">В</option></select>
       <span>класс</span>
     </div>
-    <button onclick="doAuth()">ВОЙТИ</button>
+    <button onclick="doAuth()">ВОЙТИ / РЕГИСТРАЦИЯ</button>
     <button style="background:none; color:var(--gray); font-size:12px;" onclick="resetPass()">Забыли пароль?</button>
   </div>
-
-  <div id="appBox" class="hidden">
+<div id="appBox" class="hidden">
     <div class="nav">
       <button id="btn-m" onclick="showTab('tab-m', 'btn-m')" class="active">Оценки <span id="notif-mark" class="notification-dot"></span></button>
       <button id="btn-h" onclick="showTab('tab-h', 'btn-h')">ДЗ</button>
@@ -97,7 +77,7 @@
         </div>
         <div id="s-view" class="hidden">
           <h3>Мои оценки</h3>
-          <div id="myMarks"></div>
+          <div id="myMarks">Загрузка...</div>
         </div>
       </div>
     </div>
@@ -111,7 +91,6 @@
           <hr>
           <select id="hSub"></select>
           <textarea id="hText" placeholder="Текст задания..."></textarea>
-          <p style="font-size:12px; color:var(--gray)">Прикрепить фото (необязательно):</p>
           <input type="file" id="hFile" accept="image/*">
           <button id="hwBtn" onclick="saveHW()">Опубликовать ДЗ</button>
         </div>
@@ -136,16 +115,16 @@
   firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth(), db = firebase.database(), storage = firebase.storage();
   let u = { uid: "", role: "", class: "" };
-  const subs = ["Математика", "Русский язык", "Физика", "История", "Английский"];
+  const subs = ["Математика", "Русский язык", "Физика", "История", "Английский", "Химия", "Биология"];
 
-  // АВТОРИЗАЦИЯ
+  // 1. АВТОРИЗАЦИЯ И РЕГИСТРАЦИЯ
   function doAuth() {
     const e = document.getElementById("email").value, p = document.getElementById("pass").value;
     const r = document.getElementById("role").value, c = document.getElementById("cN").value + document.getElementById("cL").value;
     if(!e || !p) return alert("Заполни поля!");
 
     auth.signInWithEmailAndPassword(e, p).then(res => {
-      db.ref("users/" + res.user.uid).update({ role: r, class: c });
+      db.ref("users/" + res.user.uid).update({ role: r, class: c, email: e });
     }).catch(() => {
       auth.createUserWithEmailAndPassword(e, p).then(res => {
         db.ref("users/" + res.user.uid).set({ role: r, class: c, email: e });
@@ -153,47 +132,53 @@
     });
   }
 
+  function resetPass() { 
+    const e = document.getElementById("email").value;
+    if(!e) return alert("Введи Email!");
+    auth.sendPasswordResetEmail(e).then(() => alert("Инструкция на почте!")).catch(err => alert(err.message));
+  }
+
+  // 2. СЛУШАТЕЛЬ СОСТОЯНИЯ
   auth.onAuthStateChanged(user => {
     if (user) {
       db.ref("users/" + user.uid).on("value", snap => {
-        u = snap.val(); u.uid = user.uid;
-        initApp();
+        const data = snap.val();
+        if(data) {
+          u = data; u.uid = user.uid;
+          initApp();
+        }
       });
     } else {
       document.getElementById("loginBox").classList.remove("hidden");
       document.getElementById("appBox").classList.add("hidden");
+      document.getElementById("exitBtn").classList.add("hidden");
     }
   });
 
+  // 3. ИНИЦИАЛИЗАЦИЯ
   function initApp() {
     document.getElementById("loginBox").classList.add("hidden");
     document.getElementById("appBox").classList.remove("hidden");
-document.getElementById("exitBtn").classList.remove("hidden");
-    document.getElementById("topTitle").innerText = ${u.class} | ${u.role.toUpperCase()};
+    document.getElementById("exitBtn").classList.remove("hidden");
+    document.getElementById("topTitle").innerText = u.class + " | " + u.role.toUpperCase();
     
-    let opt = subs.map(s => <option value="${s}">${s}</option>).join("");
+    let opt = subs.map(s => '<option value="'+s+'">'+s+'</option>').join("");
     document.getElementById("mSub").innerHTML = opt;
     document.getElementById("hSub").innerHTML = opt;
-
-    if (u.role === "teacher") {
+if (u.role === "teacher") {
       document.getElementById("t-view").classList.remove("hidden");
       document.getElementById("t-hw").classList.remove("hidden");
+      document.getElementById("s-view").classList.add("hidden");
       loadClass();
     } else {
       document.getElementById("s-view").classList.remove("hidden");
+      document.getElementById("t-view").classList.add("hidden");
       loadMyMarks();
-      checkNewMarks(); // Уведомления
+      checkNewMarks();
     }
     loadHW();
     loadSch();
     updateTimer();
-  }
-
-  // УВЕДОМЛЕНИЯ (Проверка новых оценок)
-  function checkNewMarks() {
-    db.ref("marks/" + u.uid).limitToLast(1).on("child_added", () => {
-       document.getElementById("notif-mark").style.display = "block";
-    });
   }
 
   function showTab(id, btnId) {
@@ -204,95 +189,90 @@ document.getElementById("exitBtn").classList.remove("hidden");
     if(id === 'tab-m') document.getElementById("notif-mark").style.display = "none";
   }
 
-  // ФУНКЦИЯ ДЛЯ ФОТО И ДЗ
+  // 4. ДОМАШНЕЕ ЗАДАНИЕ И ФОТО
   async function saveHW() {
-    const btn = document.getElementById("hwBtn");
-    const d = document.getElementById("hDate").value;
-    const s = document.getElementById("hSub").value;
-    const t = document.getElementById("hText").value;
+    const btn = document.getElementById("hwBtn"), d = document.getElementById("hDate").value;
+    const s = document.getElementById("hSub").value, t = document.getElementById("hText").value;
     const file = document.getElementById("hFile").files[0];
-    
     if(!d || !t) return alert("Заполни дату и текст!");
     
-    btn.disabled = true;
-    btn.innerText = "Загрузка...";
-    
+    btn.disabled = true; btn.innerText = "Загрузка...";
     let imgUrl = "";
     if(file) {
-      const ref = storage.ref(hw/${u.class}/${Date.now()}_${file.name});
+      const ref = storage.ref("hw/" + u.class + "/" + Date.now() + "_" + file.name);
       await ref.put(file);
       imgUrl = await ref.getDownloadURL();
     }
-
-    db.ref(hw/${u.class}/${d}/${s}).set({ text: t, img: imgUrl }).then(() => {
-      alert("Опубликовано!");
-      btn.disabled = false;
-      btn.innerText = "Опубликовать ДЗ";
-      document.getElementById("hText").value = "";
-      document.getElementById("hFile").value = "";
+    db.ref("hw/" + u.class + "/" + d + "/" + s).set({ text: t, img: imgUrl }).then(() => {
+      alert("Готово!");
+      btn.disabled = false; btn.innerText = "Опубликовать ДЗ";
+      document.getElementById("hText").value = ""; document.getElementById("hFile").value = "";
     });
   }
 
   function loadHW() {
     const d = document.getElementById("hDate").value;
     if(!d) return;
-    db.ref(hw/${u.class}/${d}).on("value", snap => {
+    db.ref("hw/" + u.class + "/" + d).on("value", snap => {
       let h = "";
       if(snap.exists()) {
         snap.forEach(c => {
           const data = c.val();
-          h += <div style="padding:10px; border-bottom:1px solid #eee">
-            <b>${c.key}:</b> ${data.text}
-            ${data.img ? <img src="${data.img}" class="hw-img" onclick="window.open('${data.img}')"> : ''}
-          </div>;
+          const imgTag = data.img ? '<img src="'+data.img+'" class="hw-img" onclick="window.open(\''+data.img+'\')">' : '';
+          h += '<div style="padding:10px; border-bottom:1px solid #eee"><b>'+c.key+':</b> '+data.text + imgTag + '</div>';
         });
       } else h = "Заданий нет";
       document.getElementById("hwContent").innerHTML = h;
     });
   }
 
-  // ОЦЕНКИ
+  // 5. ОЦЕНКИ
   function loadClass() {
     db.ref("users").orderByChild("class").equalTo(u.class).on("value", snap => {
       let h = "";
       snap.forEach(c => {
         if(c.val().role === "student") {
-          h += <div class="flex" style="margin-top:10px">
-            <span style="flex:1">${c.val().email.split('@')[0]}</span>
-            <input id="in_${c.key}" type="number" style="width:50px; margin:0" placeholder="5">
-            <button onclick="addMark('${c.key}')" style="width:40px; margin:0">OK</button>
-          </div>;
+          h += '<div class="flex" style="margin-top:10px"><span style="flex:1">'+c.val().email.split('@')[0]+'</span>';
+          h += '<input id="in_'+c.key+'" type="number" style="width:50px; margin:0" placeholder="5">';
+          h += '<button onclick="addMark(\''+c.key+'\')" style="width:40px; margin:0">OK</button></div>';
         }
       });
-      document.getElementById("sList").innerHTML = h;
+      document.getElementById("sList").innerHTML = h || "Нет учеников";
     });
   }
 
   function addMark(sid) {
     const v = document.getElementById("in_"+sid).value, d = document.getElementById("mDate").value, s = document.getElementById("mSub").value;
-    if(v && d) db.ref(marks/${sid}/${s}).push({ v: parseInt(v), d: d });
+    if(v && d) db.ref("marks/" + sid + "/" + s).push({ v: parseInt(v), d: d });
   }
 
   function loadMyMarks() {
-db.ref("marks/" + u.uid).on("value", snap => {
+    db.ref("marks/" + u.uid).on("value", snap => {
       let h = "";
       snap.forEach(sub => {
         let ms = "";
         sub.forEach(m => {
           const val = m.val().v;
-          const cls = val >= 5 ? 'm-5' : (val == 4 ? 'm-4' : 'm-3');
-          ms += <span class="mark-badge ${cls}">${val}</span>;
+          const cls = val >= 5 ? 'm-5' : (val == 4 ? 'm-4' : (val == 3 ? 'm-3' : 'm-2'));
+          ms += '<span class="mark-badge '+cls+'">'+val+'</span>';
         });
-        h += <div><b>${sub.key}:</b><br>${ms}</div><hr style="opacity:0.1">;
+        h += '<div><b>'+sub.key+':</b><br>'+ms+'</div><hr style="opacity:0.1">';
       });
-      document.getElementById("myMarks").innerHTML = h || "Нет оценок";
+      document.getElementById("myMarks").innerHTML = h || "Оценок пока нет";
+    });
+  }
+function checkNewMarks() {
+    db.ref("marks/" + u.uid).limitToLast(1).on("child_added", () => {
+       if(document.getElementById("tab-m").classList.contains("hidden"))
+       document.getElementById("notif-mark").style.display = "block";
     });
   }
 
   function loadSch() {
     db.ref("schedules/" + u.class).on("value", snap => {
       let h = "<h3>Расписание</h3>";
-      if(snap.exists()) snap.forEach(d => h += <b>${d.key}</b><pre>${d.val()}</pre>);
+      if(snap.exists()) snap.forEach(d => h += "<b>"+d.key+"</b><pre>"+d.val()+"</pre>");
+      else h += "Не заполнено";
       document.getElementById("scheduleBox").innerHTML = h;
     });
   }
@@ -305,10 +285,6 @@ db.ref("marks/" + u.uid).on("value", snap => {
   }
 
   function exitApp() { auth.signOut().then(() => location.reload()); }
-  function resetPass() { 
-    const e = document.getElementById("email").value;
-    if(e) auth.sendPasswordResetEmail(e).then(() => alert("Письмо отправлено!"));
-  }
 </script>
 </body>
 </html>
