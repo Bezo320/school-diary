@@ -19,11 +19,12 @@
     header { background: var(--main); color: #fff; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
     .container { max-width: 500px; margin: 20px auto; padding: 0 15px; }
     .card { background: var(--card); padding: 25px; border-radius: 24px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); position: relative; }
+    h2, h3 { margin-top: 0; color: var(--text); }
     input, select, textarea { width: 100%; padding: 14px 18px; margin: 10px 0; border-radius: 16px; border: 2px solid #e2e8f0; font-size: 16px; box-sizing: border-box; }
     button { width: 100%; padding: 14px; margin-top: 10px; border-radius: 16px; border: none; background: var(--main); color: white; font-weight: 700; cursor: pointer; transition: 0.2s; }
     button:disabled { background: #ccc; }
     .nav { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; }
-    .nav button { background: #e2e8f0; color: var(--text); padding: 10px 20px; flex: 1; }
+    .nav button { background: #e2e8f0; color: var(--text); padding: 10px 20px; flex: 1; margin: 0; }
     .nav button.active { background: var(--main); color: white; }
     .hw-img { width: 100%; border-radius: 12px; margin-top: 10px; cursor: pointer; border: 1px solid #eee; }
     .mark-badge { display: inline-block; width: 32px; height: 32px; line-height: 32px; text-align: center; border-radius: 10px; color: white; font-weight: bold; margin-right: 6px; }
@@ -53,8 +54,12 @@
       <option value="teacher">Я Учитель</option>
     </select>
     <div class="flex">
-      <select id="cN"><option value="1">1</option><option value="5">5</option><option value="9">9</option><option value="11">11</option></select>
-      <select id="cL"><option value="А">А</option><option value="Б">Б</option><option value="В">В</option></select>
+      <select id="cN">
+        <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="sixseven">sixseven</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option>
+      </select>
+      <select id="cL">
+        <option value="А">А</option><option value="Б">Б</option><option value="В">В</option>
+      </select>
       <span>класс</span>
     </div>
     <button onclick="doAuth()">ВОЙТИ / РЕГИСТРАЦИЯ</button>
@@ -113,38 +118,62 @@
   };
 
   firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth(), db = firebase.database(), storage = firebase.storage();
+  const auth = firebase.auth();
+  const db = firebase.database();
+  const storage = firebase.storage();
+  
   let u = { uid: "", role: "", class: "" };
   const subs = ["Математика", "Русский язык", "Физика", "История", "Английский", "Химия", "Биология"];
 
-  // 1. АВТОРИЗАЦИЯ И РЕГИСТРАЦИЯ
-  function doAuth() {
-    const e = document.getElementById("email").value, p = document.getElementById("pass").value;
-    const r = document.getElementById("role").value, c = document.getElementById("cN").value + document.getElementById("cL").value;
-    if(!e || !p) return alert("Заполни поля!");
+  // Установка сегодняшней даты
+  window.onload = function() {
+    const today = new Date().toISOString().split('T')[0];
+    if(document.getElementById("mDate")) document.getElementById("mDate").value = today;
+    if(document.getElementById("hDate")) document.getElementById("hDate").value = today;
+  };
 
-    auth.signInWithEmailAndPassword(e, p).then(res => {
+  function doAuth() {
+    const e = document.getElementById("email").value;
+    const p = document.getElementById("pass").value;
+    const r = document.getElementById("role").value;
+    const c = document.getElementById("cN").value + document.getElementById("cL").value;
+    
+    if(!e || !p) {
+        alert("Заполни поля!");
+        return;
+    }
+
+    auth.signInWithEmailAndPassword(e, p).then(function(res) {
       db.ref("users/" + res.user.uid).update({ role: r, class: c, email: e });
-    }).catch(() => {
-      auth.createUserWithEmailAndPassword(e, p).then(res => {
+    }).catch(function() {
+      auth.createUserWithEmailAndPassword(e, p).then(function(res) {
         db.ref("users/" + res.user.uid).set({ role: r, class: c, email: e });
-      }).catch(err => alert(err.message));
+      }).catch(function(err) {
+        alert("Ошибка: " + err.message);
+      });
     });
   }
 
   function resetPass() { 
     const e = document.getElementById("email").value;
-    if(!e) return alert("Введи Email!");
-    auth.sendPasswordResetEmail(e).then(() => alert("Инструкция на почте!")).catch(err => alert(err.message));
+    if(!e) {
+        alert("Введи Email!");
+        return;
+    }
+    auth.sendPasswordResetEmail(e).then(function() {
+        alert("Инструкция на почте!");
+    }).catch(function(err) {
+        alert(err.message);
+    });
   }
 
-  // 2. СЛУШАТЕЛЬ СОСТОЯНИЯ
-  auth.onAuthStateChanged(user => {
+  auth.onAuthStateChanged(function(user) {
     if (user) {
-      db.ref("users/" + user.uid).on("value", snap => {
+      db.ref("users/" + user.uid).on("value", function(snap) {
         const data = snap.val();
         if(data) {
-          u = data; u.uid = user.uid;
+          u = data;
+          u.uid = user.uid;
           initApp();
         }
       });
@@ -154,18 +183,25 @@
       document.getElementById("exitBtn").classList.add("hidden");
     }
   });
-
-  // 3. ИНИЦИАЛИЗАЦИЯ
-  function initApp() {
+function initApp() {
     document.getElementById("loginBox").classList.add("hidden");
     document.getElementById("appBox").classList.remove("hidden");
     document.getElementById("exitBtn").classList.remove("hidden");
-    document.getElementById("topTitle").innerText = u.class + " | " + u.role.toUpperCase();
+    document.getElementById("timer-box").classList.remove("hidden");
     
-    let opt = subs.map(s => '<option value="'+s+'">'+s+'</option>').join("");
+    let roleName = "УЧЕНИК";
+    if (u.role === "teacher") roleName = "УЧИТЕЛЬ";
+    document.getElementById("topTitle").innerText = u.class + " | " + roleName;
+    
+    let opt = "";
+    for(let i = 0; i < subs.length; i++) {
+        opt += '<option value="' + subs[i] + '">' + subs[i] + '</option>';
+    }
+    
     document.getElementById("mSub").innerHTML = opt;
     document.getElementById("hSub").innerHTML = opt;
-if (u.role === "teacher") {
+
+    if (u.role === "teacher") {
       document.getElementById("t-view").classList.remove("hidden");
       document.getElementById("t-hw").classList.remove("hidden");
       document.getElementById("s-view").classList.add("hidden");
@@ -182,59 +218,84 @@ if (u.role === "teacher") {
   }
 
   function showTab(id, btnId) {
-    document.querySelectorAll(".section").forEach(s => s.classList.add("hidden"));
-    document.querySelectorAll(".nav button").forEach(b => b.classList.remove("active"));
+    const sections = document.querySelectorAll(".section");
+    for(let i=0; i < sections.length; i++) sections[i].classList.add("hidden");
+    
+    const btns = document.querySelectorAll(".nav button");
+    for(let i=0; i < btns.length; i++) btns[i].classList.remove("active");
+    
     document.getElementById(id).classList.remove("hidden");
     document.getElementById(btnId).classList.add("active");
     if(id === 'tab-m') document.getElementById("notif-mark").style.display = "none";
   }
 
-  // 4. ДОМАШНЕЕ ЗАДАНИЕ И ФОТО
-  async function saveHW() {
-    const btn = document.getElementById("hwBtn"), d = document.getElementById("hDate").value;
-    const s = document.getElementById("hSub").value, t = document.getElementById("hText").value;
+  function saveHW() {
+    const btn = document.getElementById("hwBtn");
+    const d = document.getElementById("hDate").value;
+    const s = document.getElementById("hSub").value;
+    const t = document.getElementById("hText").value;
     const file = document.getElementById("hFile").files[0];
-    if(!d || !t) return alert("Заполни дату и текст!");
     
-    btn.disabled = true; btn.innerText = "Загрузка...";
-    let imgUrl = "";
+    if(!d || !t) {
+        alert("Заполни дату и текст!");
+        return;
+    }
+    
+    btn.disabled = true; 
+    btn.innerText = "Загрузка...";
+    
+    function publish(imgUrl) {
+      db.ref("hw/" + u.class + "/" + d + "/" + s).set({ text: t, img: imgUrl }).then(function() {
+        alert("Готово!");
+        btn.disabled = false; 
+        btn.innerText = "Опубликовать ДЗ";
+        document.getElementById("hText").value = ""; 
+        document.getElementById("hFile").value = "";
+      });
+    }
+
     if(file) {
       const ref = storage.ref("hw/" + u.class + "/" + Date.now() + "_" + file.name);
-      await ref.put(file);
-      imgUrl = await ref.getDownloadURL();
+      ref.put(file).then(function() {
+          ref.getDownloadURL().then(function(url) {
+              publish(url);
+          });
+      });
+    } else {
+        publish("");
     }
-    db.ref("hw/" + u.class + "/" + d + "/" + s).set({ text: t, img: imgUrl }).then(() => {
-      alert("Готово!");
-      btn.disabled = false; btn.innerText = "Опубликовать ДЗ";
-      document.getElementById("hText").value = ""; document.getElementById("hFile").value = "";
-    });
   }
 
   function loadHW() {
     const d = document.getElementById("hDate").value;
     if(!d) return;
-    db.ref("hw/" + u.class + "/" + d).on("value", snap => {
+    db.ref("hw/" + u.class + "/" + d).on("value", function(snap) {
       let h = "";
       if(snap.exists()) {
-        snap.forEach(c => {
+        snap.forEach(function(c) {
           const data = c.val();
-          const imgTag = data.img ? '<img src="'+data.img+'" class="hw-img" onclick="window.open(\''+data.img+'\')">' : '';
-          h += '<div style="padding:10px; border-bottom:1px solid #eee"><b>'+c.key+':</b> '+data.text + imgTag + '</div>';
+          let imgTag = "";
+          if(data.img) {
+              imgTag = '<img src="' + data.img + '" class="hw-img" onclick="window.open(\'' + data.img + '\')">';
+          }
+          h += '<div style="padding:10px; border-bottom:1px solid #eee"><b>' + c.key + ':</b> ' + data.text + imgTag + '</div>';
         });
-      } else h = "Заданий нет";
+      } else {
+          h = "Заданий нет";
+      }
       document.getElementById("hwContent").innerHTML = h;
     });
   }
 
-  // 5. ОЦЕНКИ
   function loadClass() {
-    db.ref("users").orderByChild("class").equalTo(u.class).on("value", snap => {
+    db.ref("users").orderByChild("class").equalTo(u.class).on("value", function(snap) {
       let h = "";
-      snap.forEach(c => {
+      snap.forEach(function(c) {
         if(c.val().role === "student") {
-          h += '<div class="flex" style="margin-top:10px"><span style="flex:1">'+c.val().email.split('@')[0]+'</span>';
-          h += '<input id="in_'+c.key+'" type="number" style="width:50px; margin:0" placeholder="5">';
-          h += '<button onclick="addMark(\''+c.key+'\')" style="width:40px; margin:0">OK</button></div>';
+          const emailName = c.val().email.split('@')[0];
+h += '<div class="flex" style="margin-top:10px"><span style="flex:1">' + emailName + '</span>';
+          h += '<input id="in_' + c.key + '" type="number" style="width:50px; margin:0" placeholder="5">';
+          h += '<button onclick="addMark(\'' + c.key + '\')" style="width:40px; margin:0">OK</button></div>';
         }
       });
       document.getElementById("sList").innerHTML = h || "Нет учеников";
@@ -242,49 +303,70 @@ if (u.role === "teacher") {
   }
 
   function addMark(sid) {
-    const v = document.getElementById("in_"+sid).value, d = document.getElementById("mDate").value, s = document.getElementById("mSub").value;
+    const v = document.getElementById("in_"+sid).value;
+    const d = document.getElementById("mDate").value;
+    const s = document.getElementById("mSub").value;
     if(v && d) db.ref("marks/" + sid + "/" + s).push({ v: parseInt(v), d: d });
   }
 
   function loadMyMarks() {
-    db.ref("marks/" + u.uid).on("value", snap => {
+    db.ref("marks/" + u.uid).on("value", function(snap) {
       let h = "";
-      snap.forEach(sub => {
+      snap.forEach(function(sub) {
         let ms = "";
-        sub.forEach(m => {
+        sub.forEach(function(m) {
           const val = m.val().v;
-          const cls = val >= 5 ? 'm-5' : (val == 4 ? 'm-4' : (val == 3 ? 'm-3' : 'm-2'));
-          ms += '<span class="mark-badge '+cls+'">'+val+'</span>';
+          let cls = 'm-2';
+          if(val >= 5) cls = 'm-5';
+          else if(val == 4) cls = 'm-4';
+          else if(val == 3) cls = 'm-3';
+          ms += '<span class="mark-badge ' + cls + '">' + val + '</span>';
         });
-        h += '<div><b>'+sub.key+':</b><br>'+ms+'</div><hr style="opacity:0.1">';
+        h += '<div><b>' + sub.key + ':</b><br>' + ms + '</div><hr style="opacity:0.1">';
       });
       document.getElementById("myMarks").innerHTML = h || "Оценок пока нет";
     });
   }
-function checkNewMarks() {
-    db.ref("marks/" + u.uid).limitToLast(1).on("child_added", () => {
-       if(document.getElementById("tab-m").classList.contains("hidden"))
-       document.getElementById("notif-mark").style.display = "block";
+
+  function checkNewMarks() {
+    db.ref("marks/" + u.uid).limitToLast(1).on("child_added", function() {
+       if(document.getElementById("tab-m").classList.contains("hidden")) {
+           document.getElementById("notif-mark").style.display = "block";
+       }
     });
   }
 
   function loadSch() {
-    db.ref("schedules/" + u.class).on("value", snap => {
+    db.ref("schedules/" + u.class).on("value", function(snap) {
       let h = "<h3>Расписание</h3>";
-      if(snap.exists()) snap.forEach(d => h += "<b>"+d.key+"</b><pre>"+d.val()+"</pre>");
-      else h += "Не заполнено";
+      if(snap.exists()) {
+          snap.forEach(function(d) {
+              h += "<b>" + d.key + "</b><pre>" + d.val() + "</pre>";
+          });
+      } else {
+          h += "Не заполнено";
+      }
       document.getElementById("scheduleBox").innerHTML = h;
     });
   }
 
   function updateTimer() {
-    setInterval(() => {
-      const now = new Date(), t = now.getHours()*60 + now.getMinutes();
-      document.getElementById("timer-val").innerText = t < 840 ? "Идут уроки" : "Уроки окончены";
+    setInterval(function() {
+      const now = new Date();
+      const t = now.getHours() * 60 + now.getMinutes();
+      let status = "Уроки окончены";
+      if(t < 840) status = "Идут уроки";
+      if(document.getElementById("timer-val")) {
+          document.getElementById("timer-val").innerText = status;
+      }
     }, 1000);
   }
 
-  function exitApp() { auth.signOut().then(() => location.reload()); }
+  function exitApp() { 
+      auth.signOut().then(function() {
+          location.reload(); 
+      });
+  }
 </script>
 </body>
 </html>
