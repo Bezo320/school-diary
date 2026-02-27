@@ -10,7 +10,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
   <style>
-    /* Стили (можно оставить без изменений) */
+    /* Стили */
     :root { --main: #f97316; --main-dark: #ea580c; --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --gray: #64748b; --m5: #22c55e; --m4: #a855f7; --m3: #eab308; --m2: #ef4444; }
     body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; }
     header { background: var(--main); color: #fff; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
@@ -115,14 +115,14 @@
 </div>
 
 <script>
-  // ⚠️ ВСТАВЬТЕ СЮДА ВАШ КОНФИГ ИЗ КОНСОЛИ FIREBASE (ПОЛНОСТЬЮ, БЕЗ IMPORT) ⚠️
+  // ⚠️ ЗАМЕНИТЕ ЭТОТ ОБЪЕКТ НА ВАШ ИЗ КОНСОЛИ FIREBASE
   const firebaseConfig = {
     apiKey: "AIzaSyCEo8QxfX8faFjUaQNwNlTXbvws7LgXAEs",
     authDomain: "school-diary-3798a.firebaseapp.com",
-    databaseURL: "https://school-diary-3798a-default-rtdb.firebaseio.com", // проверьте точный URL
+    databaseURL: "https://school-diary-3798a-default-rtdb.firebaseio.com",
     projectId: "school-diary-3798a",
-    storageBucket: "school-diary-3798a.appspot.com",
-    // messagingSenderId и appId могут отсутствовать, но если они есть в консоли — добавьте
+    storageBucket: "school-diary-3798a.appspot.com"
+    // если есть messagingSenderId и appId, добавьте их (без лишних запятых в конце)
   };
 
   // Инициализация Firebase
@@ -131,18 +131,16 @@
   const db = firebase.database();
   const storage = firebase.storage();
   
-  // Текущий пользователь (данные из БД)
+  // Текущий пользователь
   let u = { uid: "", role: "", class: "" };
   const subs = ["Математика", "Русский язык", "Физика", "История", "Английский", "Химия", "Биология"];
 
-  // Установка сегодняшней даты
   window.onload = function() {
     const today = new Date().toISOString().split('T')[0];
     if (document.getElementById("mDate")) document.getElementById("mDate").value = today;
     if (document.getElementById("hDate")) document.getElementById("hDate").value = today;
   };
 
-  // Функция входа/регистрации
   function doAuth() {
     const email = document.getElementById("email").value;
     const pass = document.getElementById("pass").value;
