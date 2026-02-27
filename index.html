@@ -115,18 +115,24 @@
 </div>
 
 <script>
-  // ⚠️ ВСТАВЬТЕ СЮДА ВАШ КОНФИГ ИЗ КОНСОЛИ FIREBASE (ПОЛНОСТЬЮ) ⚠️
-  // Пример правильного конфига (замените на свой):
-  const firebaseConfig = {
-    apiKey: "AIzaSyCEo8QxfX8faFjUaQNwNlTXbvws7LgXAEs",
-    authDomain: "school-diary-3798a.firebaseapp.com",
-    databaseURL: "https://school-diary-3798a-default-rtdb.firebaseio.com", // Убедитесь, что это правильный URL
-    projectId: "school-diary-3798a",
-    storageBucket: "school-diary-3798a.appspot.com",
-    messagingSenderId: "1234567890", // если есть
-    appId: "1:1234567890:web:abc123" // если есть
-  };
 
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCEo8QxfX8faFjUaQNwNlTXbvws7LgXAEs",
+  authDomain: "school-diary-3798a.firebaseapp.com",
+  databaseURL: "https://school-diary-3798a-default-rtdb.firebaseio.com",
+  projectId: "school-diary-3798a",
+  storageBucket: "school-diary-3798a.firebasestorage.app",
+  messagingSenderId: "332652695618",
+  appId: "1:332652695618:web:4100f4cffb026271a5dddb",
+  measurementId: "G-NP908WXSTM"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
   // Инициализация Firebase
   firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();
@@ -449,3 +455,4 @@
 </script>
 </body>
 </html>
+
