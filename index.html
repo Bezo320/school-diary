@@ -4,11 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EDiary Premium | Электронный Дневник</title>
+  <!-- Firebase SDK (Compat) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
   <style>
+    /* Стили — можно оставить как есть */
     :root { 
       --main: #f97316; --main-dark: #ea580c;
       --bg: #f8fafc; --card: #ffffff; 
@@ -45,6 +47,7 @@
 </header>
 
 <div class="container">
+  <!-- Блок входа -->
   <div id="loginBox" class="card">
     <h2 style="text-align:center">Вход в систему</h2>
     <input id="email" type="email" placeholder="Email">
@@ -65,21 +68,26 @@
     <button onclick="doAuth()">ВОЙТИ / РЕГИСТРАЦИЯ</button>
     <button style="background:none; color:var(--gray); font-size:12px;" onclick="resetPass()">Забыли пароль?</button>
   </div>
-<div id="appBox" class="hidden">
+  
+  <!-- Основное приложение (скрыто до входа) -->
+  <div id="appBox" class="hidden">
     <div class="nav">
       <button id="btn-m" onclick="showTab('tab-m', 'btn-m')" class="active">Оценки <span id="notif-mark" class="notification-dot"></span></button>
       <button id="btn-h" onclick="showTab('tab-h', 'btn-h')">ДЗ</button>
       <button id="btn-s" onclick="showTab('tab-s', 'btn-s')">График</button>
     </div>
 
+    <!-- Вкладка Оценки -->
     <div id="tab-m" class="section">
       <div class="card">
+        <!-- Вид для учителя -->
         <div id="t-view" class="hidden">
           <h3>Журнал</h3>
           <input type="date" id="mDate">
           <select id="mSub"></select>
           <div id="sList"></div>
         </div>
+        <!-- Вид для ученика -->
         <div id="s-view" class="hidden">
           <h3>Мои оценки</h3>
           <div id="myMarks">Загрузка...</div>
@@ -87,11 +95,13 @@
       </div>
     </div>
 
+    <!-- Вкладка Домашнее задание -->
     <div id="tab-h" class="section hidden">
       <div class="card">
         <h3>Домашнее задание</h3>
         <input type="date" id="hDate" onchange="loadHW()">
         <div id="hwContent"></div>
+        <!-- Блок для учителя (публикация ДЗ) -->
         <div id="t-hw" class="hidden">
           <hr>
           <select id="hSub"></select>
@@ -102,6 +112,7 @@
       </div>
     </div>
 
+    <!-- Вкладка Расписание -->
     <div id="tab-s" class="section hidden">
       <div class="card" id="scheduleBox"></div>
     </div>
@@ -109,264 +120,389 @@
 </div>
 
 <script>
+  // ⚠️ ЗАМЕНИТЕ ЭТИ ДАННЫЕ НА СВОИ ИЗ КОНСОЛИ FIREBASE ⚠️
   const firebaseConfig = {
     apiKey: "AIzaSyCEo8QxfX8faFjUaQNwNlTXbvws7LgXAEs",
     authDomain: "school-diary-3798a.firebaseapp.com",
-    databaseURL: "https://school-diary-3798a.firebaseapp.com",
+    databaseURL: "https://school-diary-3798a-default-rtdb.firebaseio.com", // проверьте точный URL!
     projectId: "school-diary-3798a",
     storageBucket: "school-diary-3798a.appspot.com"
   };
 
+  // Инициализация Firebase
   firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();
   const db = firebase.database();
   const storage = firebase.storage();
   
+  // Текущий пользователь (данные из БД)
   let u = { uid: "", role: "", class: "" };
   const subs = ["Математика", "Русский язык", "Физика", "История", "Английский", "Химия", "Биология"];
 
-  // Установка сегодняшней даты
+  // Установка сегодняшней даты при загрузке страницы
   window.onload = function() {
     const today = new Date().toISOString().split('T')[0];
-    if(document.getElementById("mDate")) document.getElementById("mDate").value = today;
-    if(document.getElementById("hDate")) document.getElementById("hDate").value = today;
+    const mDate = document.getElementById("mDate");
+    const hDate = document.getElementById("hDate");
+    if (mDate) mDate.value = today;
+    if (hDate) hDate.value = today;
   };
 
+  // Функция входа/регистрации
   function doAuth() {
-    const e = document.getElementById("email").value;
-    const p = document.getElementById("pass").value;
-    const r = document.getElementById("role").value;
-    const c = document.getElementById("cN").value + document.getElementById("cL").value;
+    const email = document.getElementById("email").value;
+    const pass = document.getElementById("pass").value;
+    const role = document.getElementById("role").value;
+    const classNum = document.getElementById("cN").value + document.getElementById("cL").value;
     
-    if(!e || !p) {
-        alert("Заполни поля!");
-        return;
+    if (!email || !pass) {
+      alert("Заполните email и пароль!");
+      return;
     }
 
-    auth.signInWithEmailAndPassword(e, p).then(function(res) {
-      db.ref("users/" + res.user.uid).update({ role: r, class: c, email: e });
-    }).catch(function() {
-      auth.createUserWithEmailAndPassword(e, p).then(function(res) {
-        db.ref("users/" + res.user.uid).set({ role: r, class: c, email: e });
-      }).catch(function(err) {
-        alert("Ошибка: " + err.message);
+    // Пытаемся войти
+    auth.signInWithEmailAndPassword(email, pass)
+      .then((userCredential) => {
+        // Успешный вход: обновляем/добавляем данные пользователя в БД
+        return db.ref("users/" + userCredential.user.uid).update({
+          role: role,
+          class: classNum,
+          email: email
+        });
+      })
+      .catch((error) => {
+        if (error.code === 'auth/user-not-found') {
+          // Пользователь не найден - регистрируем
+          auth.createUserWithEmailAndPassword(email, pass)
+            .then((userCredential) => {
+              // Сохраняем данные нового пользователя
+              return db.ref("users/" + userCredential.user.uid).set({
+                role: role,
+                class: classNum,
+                email: email
+              });
+            })
+            .catch((err) => {
+              alert("Ошибка регистрации: " + err.message);
+            });
+        } else {
+          alert("Ошибка входа: " + error.message);
+        }
       });
-    });
   }
 
-  function resetPass() { 
-    const e = document.getElementById("email").value;
-    if(!e) {
-        alert("Введи Email!");
-        return;
+  // Сброс пароля
+  function resetPass() {
+    const email = document.getElementById("email").value;
+    if (!email) {
+      alert("Введите email в поле!");
+      return;
     }
-    auth.sendPasswordResetEmail(e).then(function() {
-        alert("Инструкция на почте!");
-    }).catch(function(err) {
-        alert(err.message);
-    });
+    auth.sendPasswordResetEmail(email)
+      .then(() => alert("Письмо для сброса пароля отправлено на " + email))
+      .catch((err) => alert(err.message));
   }
 
-  auth.onAuthStateChanged(function(user) {
+  // Отслеживание состояния аутентификации
+  auth.onAuthStateChanged((user) => {
     if (user) {
-      db.ref("users/" + user.uid).on("value", function(snap) {
-        const data = snap.val();
-        if(data) {
+      // Загружаем дополнительные данные пользователя из Realtime Database
+      db.ref("users/" + user.uid).on("value", (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
           u = data;
           u.uid = user.uid;
           initApp();
+        } else {
+          // Если данных нет, создаём базовую запись (например, при первом входе)
+          db.ref("users/" + user.uid).set({
+            role: "student", // по умолчанию, но можно запросить у пользователя
+            class: "5А",
+            email: user.email
+          });
         }
+      }, (error) => {
+        console.error("Ошибка загрузки пользователя:", error);
       });
     } else {
+      // Пользователь вышел
       document.getElementById("loginBox").classList.remove("hidden");
       document.getElementById("appBox").classList.add("hidden");
       document.getElementById("exitBtn").classList.add("hidden");
     }
   });
-function initApp() {
+
+  // Инициализация приложения после загрузки данных пользователя
+  function initApp() {
     document.getElementById("loginBox").classList.add("hidden");
     document.getElementById("appBox").classList.remove("hidden");
     document.getElementById("exitBtn").classList.remove("hidden");
     document.getElementById("timer-box").classList.remove("hidden");
     
-    let roleName = "УЧЕНИК";
-    if (u.role === "teacher") roleName = "УЧИТЕЛЬ";
-    document.getElementById("topTitle").innerText = u.class + " | " + roleName;
+    // Отображение роли и класса в шапке
+    let roleName = (u.role === "teacher") ? "УЧИТЕЛЬ" : "УЧЕНИК";
+    document.getElementById("topTitle").innerText = (u.class || "?") + " | " + roleName;
     
-    let opt = "";
-    for(let i = 0; i < subs.length; i++) {
-        opt += '<option value="' + subs[i] + '">' + subs[i] + '</option>';
+    // Заполняем выпадающие списки предметов
+    let options = "";
+    for (let i = 0; i < subs.length; i++) {
+      options += '<option value="' + subs[i] + '">' + subs[i] + '</option>';
     }
-    
-    document.getElementById("mSub").innerHTML = opt;
-    document.getElementById("hSub").innerHTML = opt;
+    if (document.getElementById("mSub")) document.getElementById("mSub").innerHTML = options;
+    if (document.getElementById("hSub")) document.getElementById("hSub").innerHTML = options;
 
+    // В зависимости от роли показываем соответствующие блоки
     if (u.role === "teacher") {
       document.getElementById("t-view").classList.remove("hidden");
       document.getElementById("t-hw").classList.remove("hidden");
       document.getElementById("s-view").classList.add("hidden");
-      loadClass();
+      loadClass(); // загружаем список учеников класса
     } else {
       document.getElementById("s-view").classList.remove("hidden");
       document.getElementById("t-view").classList.add("hidden");
       loadMyMarks();
       checkNewMarks();
     }
+
+    // Загружаем ДЗ и расписание
     loadHW();
     loadSch();
     updateTimer();
   }
 
-  function showTab(id, btnId) {
-    const sections = document.querySelectorAll(".section");
-    for(let i=0; i < sections.length; i++) sections[i].classList.add("hidden");
-    
-    const btns = document.querySelectorAll(".nav button");
-    for(let i=0; i < btns.length; i++) btns[i].classList.remove("active");
-    
-    document.getElementById(id).classList.remove("hidden");
+  // Переключение вкладок
+  function showTab(tabId, btnId) {
+    // Скрываем все секции
+    document.querySelectorAll(".section").forEach(s => s.classList.add("hidden"));
+    // Убираем активный класс со всех кнопок навигации
+    document.querySelectorAll(".nav button").forEach(b => b.classList.remove("active"));
+    // Показываем нужную секцию и активируем кнопку
+    document.getElementById(tabId).classList.remove("hidden");
     document.getElementById(btnId).classList.add("active");
-    if(id === 'tab-m') document.getElementById("notif-mark").style.display = "none";
+    // Если перешли на вкладку оценок, скрываем уведомление
+    if (tabId === 'tab-m' && document.getElementById("notif-mark")) {
+      document.getElementById("notif-mark").style.display = "none";
+    }
   }
 
+  // Загрузка ДЗ (для всех)
+  function loadHW() {
+    const date = document.getElementById("hDate").value;
+    if (!date) return;
+    // Слушаем изменения по пути homework/класс/дата
+    db.ref("homework/" + u.class + "/" + date).on("value", (snapshot) => {
+      let html = "";
+      if (snapshot.exists()) {
+        snapshot.forEach((child) => {
+          const data = child.val();
+          let imgTag = "";
+          if (data.img) {
+            imgTag = '<img src="' + data.img + '" class="hw-img" onclick="window.open(\'' + data.img + '\')">';
+          }
+          html += '<div style="padding:10px; border-bottom:1px solid #eee"><b>' + child.key + ':</b> ' + (data.text || "") + imgTag + '</div>';
+        });
+      } else {
+        html = "Заданий нет";
+      }
+      document.getElementById("hwContent").innerHTML = html;
+    });
+  }
+
+  // Сохранение ДЗ (только для учителя)
   function saveHW() {
     const btn = document.getElementById("hwBtn");
-    const d = document.getElementById("hDate").value;
-    const s = document.getElementById("hSub").value;
-    const t = document.getElementById("hText").value;
+    const date = document.getElementById("hDate").value;
+    const subject = document.getElementById("hSub").value;
+    const text = document.getElementById("hText").value;
     const file = document.getElementById("hFile").files[0];
-    
-    if(!d || !t) {
-        alert("Заполни дату и текст!");
-        return;
+
+    if (!date || !text) {
+      alert("Заполните дату и текст задания!");
+      return;
     }
-    
-    btn.disabled = true; 
+
+    btn.disabled = true;
     btn.innerText = "Загрузка...";
-    
-    function publish(imgUrl) {
-      db.ref("hw/" + u.class + "/" + d + "/" + s).set({ text: t, img: imgUrl }).then(function() {
-        alert("Готово!");
-        btn.disabled = false; 
+
+    // Функция публикации (с URL картинки или без)
+    function publish(imgUrl = "") {
+      db.ref("homework/" + u.class + "/" + date + "/" + subject).set({
+        text: text,
+        img: imgUrl,
+        teacher: u.uid,
+        timestamp: Date.now()
+      }).then(() => {
+        alert("ДЗ опубликовано!");
+        btn.disabled = false;
         btn.innerText = "Опубликовать ДЗ";
-        document.getElementById("hText").value = ""; 
+        document.getElementById("hText").value = "";
         document.getElementById("hFile").value = "";
+      }).catch((err) => {
+        alert("Ошибка сохранения: " + err.message);
+        btn.disabled = false;
+        btn.innerText = "Опубликовать ДЗ";
       });
     }
 
-    if(file) {
-      const ref = storage.ref("hw/" + u.class + "/" + Date.now() + "_" + file.name);
-      ref.put(file).then(function() {
-          ref.getDownloadURL().then(function(url) {
-              publish(url);
-          });
+    if (file) {
+      // Загружаем файл в Storage
+      const storageRef = storage.ref("homework/" + u.class + "/" + Date.now() + "_" + file.name);
+      storageRef.put(file).then((snapshot) => {
+        return storageRef.getDownloadURL();
+      }).then((url) => {
+        publish(url);
+      }).catch((err) => {
+        alert("Ошибка загрузки файла: " + err.message);
+        btn.disabled = false;
+        btn.innerText = "Опубликовать ДЗ";
       });
     } else {
-        publish("");
+      publish();
     }
   }
 
-  function loadHW() {
-    const d = document.getElementById("hDate").value;
-    if(!d) return;
-    db.ref("hw/" + u.class + "/" + d).on("value", function(snap) {
-      let h = "";
-      if(snap.exists()) {
-        snap.forEach(function(c) {
-          const data = c.val();
-          let imgTag = "";
-          if(data.img) {
-              imgTag = '<img src="' + data.img + '" class="hw-img" onclick="window.open(\'' + data.img + '\')">';
-          }
-          h += '<div style="padding:10px; border-bottom:1px solid #eee"><b>' + c.key + ':</b> ' + data.text + imgTag + '</div>';
-        });
-      } else {
-          h = "Заданий нет";
-      }
-      document.getElementById("hwContent").innerHTML = h;
-    });
-  }
-
+  // Загрузка списка учеников класса (для учителя)
   function loadClass() {
-    db.ref("users").orderByChild("class").equalTo(u.class).on("value", function(snap) {
-      let h = "";
-      snap.forEach(function(c) {
-        if(c.val().role === "student") {
-          const emailName = c.val().email.split('@')[0];
-h += '<div class="flex" style="margin-top:10px"><span style="flex:1">' + emailName + '</span>';
-          h += '<input id="in_' + c.key + '" type="number" style="width:50px; margin:0" placeholder="5">';
-          h += '<button onclick="addMark(\'' + c.key + '\')" style="width:40px; margin:0">OK</button></div>';
+    db.ref("users").orderByChild("class").equalTo(u.class).on("value", (snapshot) => {
+      let html = "";
+      snapshot.forEach((child) => {
+        const userData = child.val();
+        if (userData.role === "student") {
+          const studentName = userData.email ? userData.email.split('@')[0] : "Ученик";
+          html += '<div class="flex" style="margin-top:10px">' +
+                  '<span style="flex:1">' + studentName + '</span>' +
+                  '<input id="in_' + child.key + '" type="number" min="2" max="5" style="width:70px; margin:0" placeholder="Оценка">' +
+                  '<button onclick="addMark(\'' + child.key + '\')" style="width:40px; margin:0">OK</button>' +
+                  '</div>';
         }
       });
-      document.getElementById("sList").innerHTML = h || "Нет учеников";
+      document.getElementById("sList").innerHTML = html || "Нет учеников";
     });
   }
 
-  function addMark(sid) {
-    const v = document.getElementById("in_"+sid).value;
-    const d = document.getElementById("mDate").value;
-    const s = document.getElementById("mSub").value;
-    if(v && d) db.ref("marks/" + sid + "/" + s).push({ v: parseInt(v), d: d });
+  // Добавление оценки (учитель)
+  function addMark(studentId) {
+    const markInput = document.getElementById("in_" + studentId);
+    const value = markInput.value;
+    const date = document.getElementById("mDate").value;
+    const subject = document.getElementById("mSub").value;
+
+    if (!value || !date || !subject) {
+      alert("Заполните все поля (оценка, дата, предмет)");
+      return;
+    }
+
+    const mark = parseInt(value);
+    if (isNaN(mark) || mark < 2 || mark > 5) {
+      alert("Оценка должна быть числом от 2 до 5");
+      return;
+    }
+
+    db.ref("marks/" + studentId + "/" + subject).push({
+      v: mark,
+      d: date,
+      teacher: u.uid,
+      timestamp: Date.now()
+    }).then(() => {
+      markInput.value = "";
+      alert("Оценка добавлена");
+    }).catch((err) => {
+      alert("Ошибка: " + err.message);
+    });
   }
 
+  // Загрузка оценок ученика
   function loadMyMarks() {
-    db.ref("marks/" + u.uid).on("value", function(snap) {
-      let h = "";
-      snap.forEach(function(sub) {
-        let ms = "";
-        sub.forEach(function(m) {
-          const val = m.val().v;
-          let cls = 'm-2';
-          if(val >= 5) cls = 'm-5';
-          else if(val == 4) cls = 'm-4';
-          else if(val == 3) cls = 'm-3';
-          ms += '<span class="mark-badge ' + cls + '">' + val + '</span>';
-        });
-        h += '<div><b>' + sub.key + ':</b><br>' + ms + '</div><hr style="opacity:0.1">';
-      });
-      document.getElementById("myMarks").innerHTML = h || "Оценок пока нет";
-    });
-  }
-
-  function checkNewMarks() {
-    db.ref("marks/" + u.uid).limitToLast(1).on("child_added", function() {
-       if(document.getElementById("tab-m").classList.contains("hidden")) {
-           document.getElementById("notif-mark").style.display = "block";
-       }
-    });
-  }
-
-  function loadSch() {
-    db.ref("schedules/" + u.class).on("value", function(snap) {
-      let h = "<h3>Расписание</h3>";
-      if(snap.exists()) {
-          snap.forEach(function(d) {
-              h += "<b>" + d.key + "</b><pre>" + d.val() + "</pre>";
+    db.ref("marks/" + u.uid).on("value", (snapshot) => {
+      let html = "";
+      if (snapshot.exists()) {
+        snapshot.forEach((subjectSnap) => {
+          let marksHtml = "";
+          subjectSnap.forEach((markSnap) => {
+            const val = markSnap.val().v;
+            let cls = 'm-2';
+            if (val >= 5) cls = 'm-5';
+            else if (val === 4) cls = 'm-4';
+            else if (val === 3) cls = 'm-3';
+            marksHtml += '<span class="mark-badge ' + cls + '">' + val + '</span>';
           });
+          html += '<div><b>' + subjectSnap.key + ':</b><br>' + marksHtml + '</div><hr style="opacity:0.1">';
+        });
       } else {
-          h += "Не заполнено";
+        html = "Оценок пока нет";
       }
-      document.getElementById("scheduleBox").innerHTML = h;
+      document.getElementById("myMarks").innerHTML = html;
     });
   }
 
+  // Проверка новых оценок (для уведомления)
+  function checkNewMarks() {
+    db.ref("marks/" + u.uid).limitToLast(1).on("child_added", () => {
+      const tabM = document.getElementById("tab-m");
+      const notif = document.getElementById("notif-mark");
+      if (tabM && notif && tabM.classList.contains("hidden")) {
+        notif.style.display = "block";
+      }
+    });
+  }
+
+  // Загрузка расписания
+  function loadSch() {
+    db.ref("schedules/" + u.class).on("value", (snapshot) => {
+      let html = "<h3>Расписание</h3>";
+      if (snapshot.exists()) {
+        snapshot.forEach((daySnap) => {
+          html += "<b>" + daySnap.key + ":</b> " + daySnap.val() + "<br>";
+        });
+      } else {
+        html += "Расписание не заполнено";
+      }
+      document.getElementById("scheduleBox").innerHTML = html;
+    });
+  }
+
+  // Таймер (статус уроков)
   function updateTimer() {
-    setInterval(function() {
+    setInterval(() => {
       const now = new Date();
-      const t = now.getHours() * 60 + now.getMinutes();
+      const hours = now.getHours();
+      const minutes = now.getMinutes();
+      const totalMinutes = hours * 60 + minutes;
+      
       let status = "Уроки окончены";
-      if(t < 840) status = "Идут уроки";
-      if(document.getElementById("timer-val")) {
-          document.getElementById("timer-val").innerText = status;
+      if (totalMinutes >= 480 && totalMinutes < 840) { // 8:00 - 14:00
+        status = "Идут уроки (1 смена)";
+      } else if (totalMinutes >= 840 && totalMinutes < 1020) { // 14:00 - 17:00
+        status = "Идут уроки (2 смена)";
+      }
+      
+      const timerEl = document.getElementById("timer-val");
+      if (timerEl) {
+        timerEl.innerText = status + " (" + hours + ":" + (minutes < 10 ? '0' + minutes : minutes) + ")";
       }
     }, 1000);
   }
 
-  function exitApp() { 
-      auth.signOut().then(function() {
-          location.reload(); 
-      });
+  // Выход
+  function exitApp() {
+    auth.signOut().then(() => {
+      location.reload();
+    }).catch((err) => {
+      console.error("Ошибка выхода:", err);
+    });
   }
+
+  // Дополнительно: обработчик выбора файла (для информации)
+  document.addEventListener('DOMContentLoaded', () => {
+    const fileInput = document.getElementById('hFile');
+    if (fileInput) {
+      fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+          console.log("Выбран файл:", e.target.files[0].name);
+        }
+      });
+    }
+  });
 </script>
 </body>
 </html>
