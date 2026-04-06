@@ -3,25 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EDiary Premium | Электронный Дневник</title>
+  <title>EDiary Premium</title>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
   <style>
-    :root { --main: #f97316; --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --gray: #64748b; --m5: #22c55e; --m4: #a855f7; --m3: #eab308; --m2: #ef4444; }
+    :root { --main: #f97316; --bg: #f8fafc; --card: #fff; --text: #1e293b; --m5: #22c55e; --m4: #a855f7; --m3: #eab308; --m2: #ef4444; }
     body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; }
     header { background: var(--main); color: #fff; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
     .container { max-width: 500px; margin: 20px auto; padding: 0 15px; }
     .card { background: var(--card); padding: 25px; border-radius: 24px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-    h2, h3 { margin-top: 0; }
     input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border-radius: 16px; border: 1px solid #ccc; }
     button { width: 100%; padding: 12px; background: var(--main); color: white; border: none; border-radius: 16px; font-weight: bold; cursor: pointer; }
     .nav { display: flex; gap: 10px; margin-bottom: 20px; }
     .nav button { background: #e2e8f0; color: black; }
     .nav button.active { background: var(--main); color: white; }
     .mark-badge { display: inline-block; width: 32px; height: 32px; line-height: 32px; text-align: center; border-radius: 10px; color: white; margin: 2px; }
-    .m-5 { background: #22c55e; } .m-4 { background: #a855f7; } .m-3 { background: #eab308; } .m-2 { background: #ef4444; }
+    .m-5 { background: var(--m5); } .m-4 { background: var(--m4); } .m-3 { background: var(--m3); } .m-2 { background: var(--m2); }
     .hidden { display: none !important; }
     .flex { display: flex; gap: 10px; align-items: center; }
   </style>
@@ -59,17 +58,14 @@
     </div>
     <div id="tab-h" class="section hidden">
       <div class="card"><h3>ДЗ</h3><input type="date" id="hDate" onchange="loadHW()"><div id="hwContent"></div>
-      <div id="t-hw" class="hidden"><
-
-
-hr><select id="hSub"></select><textarea id="hText" rows="2"></textarea><input type="file" id="hFile" accept="image/*"><button onclick="saveHW()">Опубликовать</button></div></div>
+      <div id="t-hw" class="hidden"><hr><select id="hSub"></select><textarea id="hText" rows="2"></textarea><input type="file" id="hFile" accept="image/*"><button onclick="saveHW()">Опубликовать</button></div></div>
     </div>
     <div id="tab-s" class="section hidden"><div class="card" id="scheduleBox"></div></div>
   </div>
 </div>
 <script>
   const firebaseConfig = {
-    apiKey: "AIzaSyCEo8QxfX8faFjUaQNwNlTXbvws7LgXAEs"
+    apiKey: "AIzaSyCEo8QxfX8faFjUaQNwNlTXbvws7LgXAEs",
     authDomain: "school-diary-3798a.firebaseapp.com",
     databaseURL: "https://school-diary-3798a-default-rtdb.firebaseio.com",
     projectId: "school-diary-3798a",
@@ -125,6 +121,7 @@ hr><select id="hSub"></select><textarea id="hText" rows="2"></textarea><input ty
       document.getElementById("loginBox").classList.remove("hidden");
       document.getElementById("appBox").classList.add("hidden");
       document.getElementById("exitBtn").classList.add("hidden");
+      document.getElementById("timer-box").classList.add("hidden");
     }
   });
   function initApp() {
@@ -148,10 +145,10 @@ hr><select id="hSub"></select><textarea id="hText" rows="2"></textarea><input ty
     }
     loadHW();
     loadSchedule();
-    update
+    up
 
 
-Timer();
+dateTimer();
   }
   function showTab(id, btnId) {
     document.querySelectorAll(".section").forEach(s=>s.classList.add("hidden"));
@@ -244,17 +241,10 @@ ${data.text}${img}</div><hr>`;
       let now=new Date();
       let h=now.getHours(), m=now.getMinutes();
       let status = (h*60+m>=480 && h*60+m<840)?"Идут уроки":"Уроки окончены";
-      document.getElementBy
-
-
-Id("timer-val").innerText = `${status} ${h}:${m<10?'0'+m:m}`;
+      document.getElementById("timer-val").innerText = `${status} ${h}:${m<10?'0'+m:m}`;
     },1000);
   }
   function exitApp() { auth.signOut().then(()=>location.reload()); }
 </script>
 </body>
 </html>
-
-
-
-
