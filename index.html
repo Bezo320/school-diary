@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EDiary Premium</title>
+  <title>EDiary Premium | Электронный Дневник</title>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -23,6 +23,7 @@
     .m-5 { background: var(--m5); } .m-4 { background: var(--m4); } .m-3 { background: var(--m3); } .m-2 { background: var(--m2); }
     .hidden { display: none !important; }
     .flex { display: flex; gap: 10px; align-items: center; }
+    pre { white-space: pre-wrap; font-family: inherit; margin: 5px 0; }
   </style>
 </head>
 <body>
@@ -37,7 +38,10 @@
     <input id="pass" type="password" placeholder="Пароль">
     <select id="role"><option value="student">Ученик</option><option value="teacher">Учитель</option></select>
     <div class="flex">
-      <select id="cN"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option><option>11</option></select>
+      <select id="cN">
+        <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+        <option>6</option><option>7</option><option>8</option><option>9</option><option>10</option><option>11</option>
+      </select>
       <select id="cL"><option>А</option><option>Б</option><option>В</option></select>
       <span>класс</span>
     </div>
@@ -57,7 +61,10 @@
       </div>
     </div>
     <div id="tab-h" class="section hidden">
-      <div class="card"><h3>ДЗ</h3><input type="date" id="hDate" onchange="loadHW()"><div id="hwContent"></div>
+      <div class="card"><h3>ДЗ</h3><input type="date" id="hDate" onchange="loadHW()"><div id="
+
+
+hwContent"></div>
       <div id="t-hw" class="hidden"><hr><select id="hSub"></select><textarea id="hText" rows="2"></textarea><input type="file" id="hFile" accept="image/*"><button onclick="saveHW()">Опубликовать</button></div></div>
     </div>
     <div id="tab-s" class="section hidden"><div class="card" id="scheduleBox"></div></div>
@@ -79,6 +86,93 @@
   let currentUser = { uid: "", role: "", class: "" };
   const subjects = ["Математика","Русский язык","Физика","История","Английский","Химия","Биология"];
 
+  // ---------- ДЕМО-РАСПИСАНИЕ ДЛЯ ВСЕХ КЛАССОВ (1-11, А,Б,В) ----------
+  function getScheduleForClass(className) {
+    const num = parseInt(className);
+    const schedules = {};
+    const days = ["Понедельник","Вторник","Среда","Четверг","Пятница"];
+    // Базовая сетка для начальной школы (1-4)
+    if (num <= 4) {
+      schedules["Понедельник"] = "1. Русский язык\n2. Математика\n3. Окружающий мир\n4. Физ-ра\n5. Английский";
+      schedules["Вторник"] = "1. Математика\n2. Русский язык\n3. Литературное чтение\n4. ИЗО\n5. Музыка";
+      schedules["Среда"] = "1. Русский язык\n2. Математика\n3. Технология\n4. Окружающий мир\n5. Физ-ра";
+      schedules["Четверг"] = "1. Математика\n2. Русский язык\n3. Английский язык\n4. Литература\n5. ОРКСЭ";
+      schedules["Пятница"] = "1. Русский язык\n2. Математика\n3. Физ-ра\n4. Окружающий мир\n5. Английский";
+    } 
+    // Средняя школа (5-9)
+    else if (num <= 9) {
+      schedules["Понедельник"] = "1. Алгебра\n2. Русский язык\n3. Физика\n4. История\n5. Английский\n6. Биология";
+      schedules["Вторник"] = "1. Геометрия\n2. Литература\n3. Химия\n4. Обществознание\n5. Физ-ра\n6. География";
+      schedules["Среда"] = "1. Алгебра\n2. Русский язык\n3. Физика\n4. Английский\n5. ОБЖ\n6. Информатика";
+      schedules["Четверг"] = "1. Геометрия\n2. Литература\n3. История\n4. Химия\n5. Физ-ра\n6. Английский";
+      schedules["Пятница"] = "1. Алгебра\n2. Русский язык\n3. Биология\n4. География\n5. Обществознание\n6. Технология";
+    }
+    // Старшая школа (10-11)
+    else {
+      schedules["Понедельник"] = "1. Алгебра и начала анализа\n2. Русский язык\n3. Физика\n4. Информатика\n5. Английский\n6. Обществознание";
+      schedules["Вторник"] = "1. Геометрия\n2. Литература\n3. Химия\n4. Биология\n5. Физ-ра\n6. Экономика";
+      schedules["Среда"] = "1. Алгебра\n2. Русский язык\n3. Физика\n4. Астрономия\n5. Английский\n6. Право";
+      schedules["Четверг"] = "1. Геометрия\n2. Литература\n3. История\n4. Химия\n5. Физ-ра\n6. МХК";
+      schedules["Пятница"] = "1. Алгебра\n2. Русский язык\n3. Биология\n4. ОБЖ\n5. Английский\n6. Проектная деятельность";
+    }
+    return schedules;
+  }
+
+  // Заполнение расписания для конкретного класса, если его нет в БД
+  function seedScheduleIfNeeded(className) {
+    const scheduleRef = db.ref(`schedules/${className}`);
+    scheduleRef.once("value", snap => {
+      if (!snap.exists()) {
+        const demo = getScheduleForClass(className);
+        scheduleRef.set(demo).catch(e => console.warn("Ошибка записи расписания", e));
+      }
+    });
+  }
+
+  // ---------- ДЕМО-УЧЕНИКИ (по 3 ученика на каждый класс) ----------
+  const demoStudentsByClass = {};
+  // Сгенерируем для всех 1-11, А,Б,В
+  for (let n = 1; n <= 11; n++) {
+    for (let l of ["А","Б","В"]) {
+      const className = n + l;
+      const base = className.toLowerCase();
+      demoStudentsByClass[className] = [
+        { email: `student1_${base}@demo.ru`, name: "Анна Иванова" },
+        { email: `student2_${base}@demo.ru`, name: "Петр Сидоров" },
+        { email:
+
+
+`student3_${base}@demo.ru`, name: "Мария Козлова" }
+      ];
+    }
+  }
+
+  // Добавляем демо-учеников, если их нет в классе
+  async function seedStudentsIfNeeded(className) {
+    const studentsList = demoStudentsByClass[className];
+    if (!studentsList) return;
+    const usersRef = db.ref("users");
+    const snapshot = await usersRef.orderByChild("class").equalTo(className).once("value");
+    const existingEmails = new Set();
+    snapshot.forEach(child => {
+      if (child.val().email) existingEmails.add(child.val().email);
+    });
+    for (let student of studentsList) {
+      if (!existingEmails.has(student.email)) {
+        // Создаём запись ученика с фейковым uid (без пароля, только данные)
+        const fakeUid = "demo_" + student.email.replace(/[^a-z0-9]/gi, "");
+        await usersRef.child(fakeUid).set({
+          role: "student",
+          class: className,
+          email: student.email,
+          name: student.name,
+          isDemo: true
+        }).catch(e => console.warn("Не удалось создать ученика", e));
+      }
+    }
+  }
+
+  // ---------- ОСНОВНЫЕ ФУНКЦИИ ----------
   window.onload = () => {
     const today = new Date().toISOString().slice(0,10);
     if(document.getElementById("mDate")) document.getElementById("mDate").value = today;
@@ -112,7 +206,9 @@
         if(snap.val()) {
           currentUser = snap.val();
           currentUser.uid = user.uid;
-          initApp();
+          // Подготовка данных для класса
+          seedScheduleIfNeeded(currentUser.class);
+          seedStudentsIfNeeded(currentUser.class).then(() => initApp());
         } else {
           db.ref("users/"+user.uid).set({role:"student", class:"5А", email:user.email}).then(()=> location.reload());
         }
@@ -134,7 +230,10 @@
     if(document.getElementById("mSub")) document.getElementById("mSub").innerHTML = opts;
     if(document.getElementById("hSub")) document.getElementById("hSub").innerHTML = opts;
     if(currentUser.role === "teacher") {
-      document.getElementById("t-view").classList.remove("hidden");
+      document.getElementById("t-view").
+
+
+classList.remove("hidden");
       document.getElementById("t-hw").classList.remove("hidden");
       document.getElementById("s-view").classList.add("hidden");
       loadClass();
@@ -145,10 +244,7 @@
     }
     loadHW();
     loadSchedule();
-    up
-
-
-dateTimer();
+    updateTimer();
   }
   function showTab(id, btnId) {
     document.querySelectorAll(".section").forEach(s=>s.classList.add("hidden"));
@@ -161,7 +257,7 @@ dateTimer();
       let html="";
       snap.forEach(c=>{
         if(c.val().role==="student"){
-          let name = c.val().email.split('@')[0];
+          let name = c.val().name || c.val().email.split('@')[0];
           html += `<div class="flex"><span>${name}</span><input id="in_${c.key}" type="number" min="2" max="5" style="width:70px"><button onclick="addMark('${c.key}')">OK</button></div>`;
         }
       });
@@ -231,7 +327,11 @@ ${data.text}${img}</div><hr>`;
     db.ref(`schedules/${currentUser.class}`).on("value", snap=>{
       let html="<h3>Расписание</h3>";
       if(snap.exists()){
-        snap.forEach(day=>{html+=`<b>${day.key}</b><pre>${day.val()}</pre><hr>`;});
+        constdays = ["Понедельник","Вторник","Среда","Четверг","Пятница"];
+        for(let day of days) {
+          const lessons = snap.val()[day];
+          if(lessons) html+=`<b>${day}</b><pre>${lessons}</pre><hr>`;
+        }
       } else html+="Нет расписания";
       document.getElementById("scheduleBox").innerHTML = html;
     });
