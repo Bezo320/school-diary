@@ -87,7 +87,7 @@ hwContent"></div>
   let currentUser = { uid: "", role: "", class: "" };
   const subjects = ["Математика","Русский язык","Физика","История","Английский","Химия","Биология"];
 
-  // ---------- РАСПИСАНИЕ (ЛОКАЛЬНОЕ, БЕЗ FIREBASE) ----------
+  // ---------- РАСПИСАНИЕ (ЛОКАЛЬНОЕ) ----------
   function getScheduleForClass(className) {
     const num = parseInt(className);
     const letter = className.slice(-1);
@@ -117,7 +117,6 @@ hwContent"></div>
         "Пятница": "1. Алгебра\n2. Русский язык\n3. Биология\n4. ОБЖ\n5. Английский\n6. Проектная деятельность"
       };
     }
-    // Небольшие изменения для букв (5-9 классы)
     if (letter === 'Б' && num >= 5 && num <= 9) {
       schedule["Понедельник"] = schedule["Понедельник"].replace("Физика", "Биология").replace("Биология", "Физика");
     } else if (letter === 'В' && num >= 5 && num <= 9) {
@@ -126,32 +125,35 @@ hwContent"></div>
     return schedule;
   }
 
-  // ---------- ДЕМО-УЧЕНИКИ (ДЛЯ УЧИТЕЛЯ) ----------
-  function ensureDemoStudents(className) {
+  // ---------- ДЕМО-УЧЕНИКИ (ГАРАНТИРОВАННОЕ СОЗДАНИЕ) ----------
+  async function ensureDemoStudents(className) {
     const students = [
-      { email: "student1_" + className + "@demo.ru", name: "Анна Иванова" },
-      { email: "student2_" + className + "@demo.ru", name: "Петр Сидоров" },
-      { email: "student3_" + className + "@demo.ru", name: "Мария Козлова" }
+      { email: `student1_${className}@demo.ru`, name: "Анна Иванова" },
+      { email: `student2_${className}@demo.ru`, name: "Петр Сидоров" },
+      { email: `student3_${className}@demo.ru`, name: "Мария Козлова" }
     ];
-    db.ref("users").orderByChild("class").equalTo(className).once("value", (snap) => {
-      const existing = new Set();
-      snap.forEach((s) => { if (s.val().email) existing.add(s.val().email); });
-      students.forEach((st) => {
-        if (!existing.has(st.email)) {
-          const fakeUid = "demo_" + st.email.replace(/[^a-z0-9]/gi, "");
-          db.r
-
-
-ef("users/" + fakeUid).set({
-            role: "student",
-            class: className,
-            email: st.email,
-            name: st.name,
-            isDemo: true
-          }).catch((e) => console.warn(e));
-        }
-      });
+    const usersRef = db.ref("users");
+    const snapshot = await usersRef.orderByChild("class").equalTo(className).once("value");
+    const existingEmails = new Set();
+    snapshot.forEach(child => {
+      if (child.val().email) existingEmails.add(child.val().email);
     });
+    for (let student of students) {
+      if (!existingEmails.has(student.email)) {
+        const fakeUid = "demo_" + student.email.replace(/[^
+
+
+a-z0-9]/gi, "");
+        await usersRef.child(fakeUid).set({
+          role: "student",
+          class: className,
+          email: student.email,
+          name: student.name,
+          isDemo: true
+        }).catch(e => console.warn("Ошибка создания ученика", e));
+      }
+    }
+    console.log(`Демо-ученики для ${className} созданы/проверены`);
   }
 
   // ---------- ОСНОВНЫЕ ФУНКЦИИ ----------
@@ -184,18 +186,19 @@ ef("users/" + fakeUid).set({
     auth.sendPasswordResetEmail(email).then(()=>alert("Письмо отправлено")).catch(e=>alert(e.message));
   }
 
-  auth.onAuthStateChanged((user) => {
+  auth.onAuthStateChanged(async (user) => {
     if(user) {
-      db.ref("users/"+user.uid).once("value", (snap) => {
-        if(snap.val()) {
-          currentUser = snap.val();
-          currentUser.uid = user.uid;
-          ensureDemoStudents(currentUser.class);
-          initApp();
-        } else {
-          db.ref("users/"+user.uid).set({role:"student", class:"5А", email:user.email}).then(()=> location.reload());
-        }
-      });
+      const snap = await db.ref("users/"+user.uid).once("value");
+      if(snap.val()) {
+        currentUser = snap.val();
+        currentUser.uid = user.uid;
+        // Ждём, пока ученики точно создадутся
+        await ensureDemoStudents(currentUser.class);
+        initApp();
+      } else {
+        await db.ref("users/"+user.uid).set({role:"student", class:"5А", email:user.email});
+        location.reload();
+      }
     } else {
       document.getElementById("loginBox").classList.remove("hidden");
       document.getElementById("appBox").classList.add("hidden");
@@ -217,7 +220,7 @@ ef("users/" + fakeUid).set({
       document.getElementById("t-view").classList.remove("hidden");
       document.getElementById("t-hw").classList.remove("hidden");
       document.getElementById("s-view").classList.add("hidden");
-      loadClass();
+      loadClass(); // Загружаем список учеников
     } else {
       document.getElementById("s-view").classList.remove("hidden");
       document.getElementById("t-view").classList.add("hidden");
@@ -232,23 +235,31 @@ ef("users/" + fakeUid).set({
     document.querySelectorAll(".section").forEach(s=>s.classList.add("hidden"));
     document.querySelectorAll(".nav button").forEach(b=>b.classList.remove("active"));
     document.getElementById(id).classList.remove("hidden");
-    document.getElementById(btnId).classList.add("active");
-    if (id === 'tab-s') loadSchedule(); // обновить расписание при переключении
+    document.getElementById(btnId).classLis
+
+
+t.add("active");
+    if (id === 'tab-m' && currentUser.role === "teacher") {
+      loadClass(); // Обновляем список учеников при переключении на вкладку Оценки
+    }
+    if (id === 'tab-s') loadSchedule();
   }
 
   function loadClass() {
-    db.ref("users").orderByChild("class").equalTo(curren
-
-
-tUser.class).on("value", snap=>{
-      let html="";
+    db.ref("users").orderByChild("class").equalTo(currentUser.class).on("value", snap=>{
+      let html = "";
+      let hasStudents = false;
       snap.forEach(c=>{
-        if(c.val().role==="student"){
+        if(c.val().role === "student"){
+          hasStudents = true;
           let name = c.val().name || c.val().email.split('@')[0];
           html += `<div class="flex"><span>${name}</span><input id="in_${c.key}" type="number" min="2" max="5" style="width:70px"><button onclick="addMark('${c.key}')">OK</button></div>`;
         }
       });
-      document.getElementById("sList").innerHTML = html || "Нет учеников";
+      if (!hasStudents) {
+        html = "<p>⚠️ В этом классе пока нет учеников. Попробуйте обновить страницу или войти позже.</p>";
+      }
+      document.getElementById("sList").innerHTML = html;
     });
   }
 
@@ -328,8 +339,7 @@ ${data.text}${img}</div><hr>`;
   }
 
   function updateTimer() {
-    setInterval(()=>{
-      let now=new Date();
+    setInterval(()=>{let now=new Date();
       let h=now.getHours(), m=now.getMinutes();
       let status = (h*60+m>=480 && h*60+m<840)?"Идут уроки":"Уроки окончены";
       document.getElementById("timer-val").innerText = `${status} ${h}:${m<10?'0'+m:m}`;
