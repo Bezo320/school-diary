@@ -71,7 +71,7 @@ hwContent"></div>
   </div>
 </div>
 <script>
-  // Конфигурация Firebase (проверьте правильность)
+  // ---------- FIREBASE ----------
   const firebaseConfig = {
     apiKey: "AIzaSyCEo8QxfX8faFjUaQNwNlTXbvws7LgXAEs",
     authDomain: "school-diary-3798a.firebaseapp.com",
@@ -87,7 +87,7 @@ hwContent"></div>
   let currentUser = { uid: "", role: "", class: "" };
   const subjects = ["Математика","Русский язык","Физика","История","Английский","Химия","Биология"];
 
-  // ---------- ФУНКЦИЯ РАСПИСАНИЯ (прямо в коде) ----------
+  // ---------- РАСПИСАНИЕ (ЛОКАЛЬНОЕ, БЕЗ FIREBASE) ----------
   function getScheduleForClass(className) {
     const num = parseInt(className);
     const letter = className.slice(-1);
@@ -117,7 +117,7 @@ hwContent"></div>
         "Пятница": "1. Алгебра\n2. Русский язык\n3. Биология\n4. ОБЖ\n5. Английский\n6. Проектная деятельность"
       };
     }
-    // Небольшие изменения для букв
+    // Небольшие изменения для букв (5-9 классы)
     if (letter === 'Б' && num >= 5 && num <= 9) {
       schedule["Понедельник"] = schedule["Понедельник"].replace("Физика", "Биология").replace("Биология", "Физика");
     } else if (letter === 'В' && num >= 5 && num <= 9) {
@@ -126,7 +126,7 @@ hwContent"></div>
     return schedule;
   }
 
-  // Демо-ученики (для учителя) – создаются в Firebase
+  // ---------- ДЕМО-УЧЕНИКИ (ДЛЯ УЧИТЕЛЯ) ----------
   function ensureDemoStudents(className) {
     const students = [
       { email: "student1_" + className + "@demo.ru", name: "Анна Иванова" },
@@ -139,10 +139,10 @@ hwContent"></div>
       students.forEach((st) => {
         if (!existing.has(st.email)) {
           const fakeUid = "demo_" + st.email.replace(/[^a-z0-9]/gi, "");
-          db.
+          db.r
 
 
-ref("users/" + fakeUid).set({
+ef("users/" + fakeUid).set({
             role: "student",
             class: className,
             email: st.email,
@@ -154,6 +154,7 @@ ref("users/" + fakeUid).set({
     });
   }
 
+  // ---------- ОСНОВНЫЕ ФУНКЦИИ ----------
   window.onload = () => {
     const today = new Date().toISOString().slice(0,10);
     if(document.getElementById("mDate")) document.getElementById("mDate").value = today;
@@ -176,11 +177,13 @@ ref("users/" + fakeUid).set({
         } else alert("Ошибка: "+err.message);
       });
   }
+
   function resetPass() {
     const email = document.getElementById("email").value;
     if(!email) return alert("Введите email");
     auth.sendPasswordResetEmail(email).then(()=>alert("Письмо отправлено")).catch(e=>alert(e.message));
   }
+
   auth.onAuthStateChanged((user) => {
     if(user) {
       db.ref("users/"+user.uid).once("value", (snap) => {
@@ -200,6 +203,7 @@ ref("users/" + fakeUid).set({
       document.getElementById("timer-box").classList.add("hidden");
     }
   });
+
   function initApp() {
     document.getElementById("loginBox").classList.add("hidden");
     document.getElementById("appBox").classList.remove("hidden");
@@ -223,20 +227,22 @@ ref("users/" + fakeUid).set({
     loadSchedule();
     updateTimer();
   }
+
   function showTab(id, btnId) {
     document.querySelectorAll(".section").forEach(s=>s.classList.add("hidden"));
     document.querySelectorAll(".nav button").forEach(b=>b.classList.remove("active"));
     document.getElementById(id).classList.remove("hidden");
     document.getElementById(btnId).classList.add("active");
-    if (id === 'tab-s') loadSchedule(); // обновить при переключении
+    if (id === 'tab-s') loadSchedule(); // обновить расписание при переключении
   }
+
   function loadClass() {
-    db.ref("users").orderByChild("class").equalTo(currentUser.class).on("value", snap=>{
+    db.ref("users").orderByChild("class").equalTo(curren
+
+
+tUser.class).on("value", snap=>{
       let html="";
-      s
-
-
-nap.forEach(c=>{
+      snap.forEach(c=>{
         if(c.val().role==="student"){
           let name = c.val().name || c.val().email.split('@')[0];
           html += `<div class="flex"><span>${name}</span><input id="in_${c.key}" type="number" min="2" max="5" style="width:70px"><button onclick="addMark('${c.key}')">OK</button></div>`;
@@ -245,6 +251,7 @@ nap.forEach(c=>{
       document.getElementById("sList").innerHTML = html || "Нет учеников";
     });
   }
+
   function addMark(uid) {
     let val = document.getElementById("in_"+uid).value;
     let date = document.getElementById("mDate").value;
@@ -256,6 +263,7 @@ nap.forEach(c=>{
     document.getElementById("in_"+uid).value="";
     alert("Оценка добавлена");
   }
+
   function loadMyMarks() {
     db.ref(`marks/${currentUser.uid}`).on("value", snap=>{
       let html="";
@@ -272,6 +280,7 @@ ${marks}</div><hr>`;
       document.getElementById("myMarks").innerHTML = html || "Оценок нет";
     });
   }
+
   function loadHW() {
     let date = document.getElementById("hDate").value;
     if(!date) return;
@@ -286,6 +295,7 @@ ${data.text}${img}</div><hr>`;
       document.getElementById("hwContent").innerHTML = html || "Нет заданий";
     });
   }
+
   function saveHW() {
     let btn = document.getElementById("hwBtn");
     let date = document.getElementById("hDate").value;
@@ -304,6 +314,7 @@ ${data.text}${img}</div><hr>`;
       ref.put(file).then(()=>ref.getDownloadURL()).then(publish).catch(e=>alert("Ошибка фото"));
     } else publish();
   }
+
   function loadSchedule() {
     const className = currentUser.class;
     const schedule = getScheduleForClass(className);
@@ -315,6 +326,7 @@ ${data.text}${img}</div><hr>`;
     }
     document.getElementById("scheduleBox").innerHTML = html;
   }
+
   function updateTimer() {
     setInterval(()=>{
       let now=new Date();
@@ -323,6 +335,7 @@ ${data.text}${img}</div><hr>`;
       document.getElementById("timer-val").innerText = `${status} ${h}:${m<10?'0'+m:m}`;
     },1000);
   }
+
   function exitApp() { auth.signOut().then(()=>location.reload()); }
 </script>
 </body>
