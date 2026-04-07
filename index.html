@@ -86,14 +86,10 @@ hwContent"></div>
   let currentUser = { uid: "", role: "", class: "" };
   const subjects = ["Математика","Русский язык","Физика","История","Английский","Химия","Биология"];
 
-  // ---------- РАСПИСАНИЕ ДЛЯ ВСЕХ КЛАССОВ (1-11, А,Б,В) ----------
-  // Генерируем уникальное расписание для каждого класса
-  function getScheduleForClass(className) {
+  // ---------- ФУНКЦИЯ ГЕНЕРАЦИИ РАСПИСАНИЯ ДЛЯ ЛЮБОГО КЛАССА ----------
+  function generateScheduleForClass(className) {
     const num = parseInt(className);
     const letter = className.slice(-1);
-    const days = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница"];
-    
-    // Базовая сетка зависит от параллели, а буква вносит небольшие изменения
     let base = {};
     if (num <= 4) {
       base = {
@@ -120,100 +116,71 @@ hwContent"></div>
         "Пятница": ["Алгебра", "Русский язык", "Биология", "ОБЖ", "Английский", "Проектная деятельность"]
       };
     }
-    
-    // Вносим вариации в зависимости от буквы (А, Б, В)
     if (letter === 'Б') {
-      // Для Б классов меняем местами некоторые предметы
       if (base["Понедельник"]) [base["Понедельник"][2], base["Понедельник"][3]] = [base["Понедельник"][3], base["Понедельник"][2]];
       if (base["Среда"]) base["Среда"][1] = "Родной язык";
     } else if (letter === 'В') {
       if (base["Вторник"]) base["Вторник"][2] = "Экология";
       if (base["Четверг"]) base["Четверг"][4] = "Рисование";
     }
-    
-    // Преобразуем в строки с номерами
     const result = {};
-    for (let day of days) {
-      if (base[day]) {
-        result[day] = base[day].map((item, idx) => `${idx+1}. ${item}`).join('\n');
-      } else {
-        result[day] = "Нет уроков";
-      }
+    for (let day of Object.keys(base)) {
+      result[day] = base[day].map((item, idx) => `${idx+1}. ${item}`).join('\n');
     }
     return result;
   }
-  
-  // Заполнение расписания для ВСЕХ классов (вызывается один раз при загрузке)
-  async function seedAllSchedules() {
-    const classes = [];
-    for (let n = 1; n <= 11; n++) {
-      for (let l of ["А","Б","В"]) {
-        classes
 
-
-.push(n + l);
-      }
-    }
-    for (let cls of classes) {
-      const ref = db.ref(`schedules/${cls}`);
-      const snap = await ref.once("value");
-      if (!snap.exists()) {
-        const schedule = getScheduleForClass(cls);
-        await ref.set(schedule).catch(e => console.warn(`Ошибка записи расписания для ${cls}`, e));
-      }
-    }
-    console.log("Расписание для всех классов загружено");
-  }
-  
-  // ---------- ДЕМО-УЧЕНИКИ ДЛЯ ВСЕХ КЛАССОВ ----------
-  const demoStudentsByClass = {};
-  for (let n = 1; n <= 11; n++) {
-    for (let l of ["А","Б","В"]) {
-      const className = n + l;
-      demoStudentsByClass[className] = [
-        { email: `student1_${className}@demo.ru`, name: `Ученик 1 (${className})` },
-        { email: `student2_${className}@demo.ru`, name: `Ученик 2 (${className})` },
-        { email: `student3_${className}@demo.ru`, name: `Ученик 3 (${className})` }
-      ];
+  // ---------- ПРИНУДИТЕЛЬНОЕ СОЗДАНИЕ РАСПИСАНИЯ ДЛЯ КЛАССА ПОЛЬЗОВАТЕЛЯ ----------
+  async function ensureScheduleExists(className) {
+    const scheduleRef = db.ref(`schedules/${className}`);
+    const snap = await scheduleRef.once("value");
+    if (!snap.exists()) {
+      const newSchedule = generateScheduleForClass(className);
+      await scheduleRef.set(newSchedule);
+      console.log(`Расписание для ${className} создано:`, newSchedule);
+    } else {
+      console.log(`Расписание для ${className} уже есть`);
     }
   }
-  
-  async function seedAllStudents() {
-    const classes = Object.keys(demoStudentsByClass);
-    for (let cls of classes) {
-      const studentsList = demoStudentsByClass[cls];
-      const usersRef = db.ref("users");
-      const snapshot = await usersRef.orderByChild("class").equalTo(cls).once("value");
-      const existingEmails = new Set();
-      snapshot.forEach(child => {
-        if (child.val().email) existingEmails.add(child.val().email);
+
+  // ---------- ДЕМО-УЧЕНИКИ (только для текущего класса) ----------
+  async function ensureDemoStudents(className) {
+    const studentsLis
+
+
+t = [];
+    for (let i = 1; i <= 3; i++) {
+      studentsList.push({
+        email: `student${i}_${className.replace(/[^a-z0-9]/gi,'')}@demo.ru`,
+        name: `Ученик ${i} (${className})`
       });
-      for (let student of studentsList) {
-        if (!existingEmails.has(student.email)) {
-          const fakeUid = "demo_" + student.email.replace(/[^a-z0-9]/gi, "");
-          await usersRef.child(fakeUid).set({
-            role: "student",
-            class: cls,
-            email: student.email,
-            name: student.name,
-            isDemo: true
-          }).catch(e => console.warn(`Не удалось создать ученика для ${cls}`, e));
-        }
+    }
+    const usersRef = db.ref("users");
+    const snapshot = await usersRef.orderByChild("class").equalTo(className).once("value");
+    const existingEmails = new Set();
+    snapshot.forEach(child => { if (child.val().email) existingEmails.add(child.val().email); });
+    for (let student of studentsList) {
+      if (!existingEmails.has(student.email)) {
+        const fakeUid = "demo_" + student.email.replace(/[^a-z0-9]/gi, "");
+        await usersRef.child(fakeUid).set({
+          role: "student",
+          class: className,
+          email: student.email,
+          name: student.name,
+          isDemo: true
+        }).catch(e => console.warn(`Не удалось создать ученика ${student.email}`, e));
       }
     }
-    console.log("Демо-ученики для всех классов добавлены");
+    console.log(`Демо-ученики для ${className} добавлены`);
   }
-  
+
   // ---------- ОСНОВНЫЕ ФУНКЦИИ ----------
-  window.onload = async () => {
+  window.onload = () => {
     const today = new Date().toISOString().slice(0,10);
     if(document.getElementById("mDate")) document.getElementById("mDate").value = today;
     if(document.getElementById("hDate")) document.getElementById("hDate").value = today;
-    // Однократно заполняем расписание и учеников для всех классов
-    await seedAllSchedules();
-    await seedAllStudents();
   };
-  
+
   function doAuth() {
     const email = document.getElementById("email").value.trim();
     const pass = document.getElementById("pass").value;
@@ -235,24 +202,24 @@ hwContent"></div>
     if(!email) return alert("Введите email");
     auth.sendPasswordResetEmail(email).then(()=>alert("Письмо отправлено")).catch(e=>alert(e.message));
   }
-  auth.onAuthStateChanged(user => {
+  auth.onAuthStateChanged(async (user) => {
     if(user) {
-      db.ref("users/"+user.uid).once("value", snap => {
-        if(snap.val()) {
-          currentUser = snap.val();
-          currentUser.uid = user.uid;
-          initApp();
-        } else {
-          db.ref("users/"+user.uid).set({role:"student", class:"5А", email:user.email}).then(()=> location.reload());
-        }
-      });
+      const snap = await db.ref("users/"+user.uid).once("value");
+      if(snap.val()) {
+        currentUser = snap.val();
+        currentUser.uid = user.uid;
+        // Принудительно создаём расписание и учеников для этого класса
+        await ensureScheduleExists(currentUser.class);
+        await ensureDemoStudents(currentUser.class);
+        initApp();
+      } else {
+        await db.ref("users/"+user.uid).set({role:"student", class:"5А", email:user.email});
+        location.reload();
+      }
     } else {
       document.getElementById("loginBox").classList.remove("hidden");
       document.getElementById("appBox").classList.add("hidden");
-      document.getElementById("exitBtn").classList.
-
-
-add("hidden");
+      document.getElementById("exitBtn").classList.add("hidden");
       document.getElementById("timer-box").classList.add("hidden");
     }
   });
@@ -267,7 +234,9 @@ add("hidden");
     if(document.getElementById("hSub")) document.getElementById("hSub").innerHTML = opts;
     if(currentUser.role === "teacher") {
       document.getElementById("t-view").classList.remove("hidden");
-      document.getElementById("t-hw").classList.remove("hidden");
+
+
+document.getElementById("t-hw").classList.remove("hidden");
       document.getElementById("s-view").classList.add("hidden");
       loadClass();
     } else {
@@ -344,10 +313,7 @@ ${data.text}${img}</div><hr>`;
     let subj = document.getElementById("hSub").value;
     let text = document.getElementById("hText").value;
     let file = document.getElementById("hFile").files[0];
-    if(!date || !te
-
-
-xt) return alert("Дата и текст");
+    if(!date || !text) return alert("Дата и текст");
     btn.disabled=true; btn.innerText="Загрузка...";
     let publish = (url="")=>{
       db.ref(`homework/${currentUser.class}/${date}/${subj}`).set({text, img:url, teacher:currentUser.uid})
@@ -360,16 +326,34 @@ xt) return alert("Дата и текст");
     } else publish();
   }
   function loadSchedule() {
-    db.ref(`schedules/${currentUser.class}`).on("value", snap=>{
-      let html="<h3>Расписание</h3>";
-      if(snap.exists()){
+    const classForSchedule = currentUser.class;
+    console.log("Загрузка расписания для класса:", classForSchedule);
+    db.ref(`schedules/${classForSchedule}`).on("value", (
+Date.now - Domain for Sale | Buy Now on NextBrand.com | NextBrand
+Date.now - Domain for Sale | Buy Now on NextBrand.com | NextBrand
+www.nextbrand.com
+
+
+snap) => {
+      console.log("Получены данные расписания:", snap.val());
+      let html = "<h3>Расписание</h3>";
+      if (snap.exists()) {
         const days = ["Понедельник","Вторник","Среда","Четверг","Пятница"];
-        for(let day of days) {
+        for (let day of days) {
           const lessons = snap.val()[day];
-          if(lessons) html+=`<b>${day}</b><pre>${lessons}</pre><hr>`;
+          if (lessons) {
+            html += `<b>${day}</b><pre>${lessons}</pre><hr>`;
+          } else {
+            html += `<b>${day}</b><pre>Нет уроков</pre><hr>`;
+          }
         }
-      } else html+="Нет расписания";
+      } else {
+        html += "Расписание не найдено. Попробуйте перезагрузить страницу.";
+      }
       document.getElementById("scheduleBox").innerHTML = html;
+    }, (error) => {
+      console.error("Ошибка загрузки расписания:", error);
+      document.getElementById("scheduleBox").innerHTML = "<h3>Расписание</h3><p>Ошибка загрузки. Проверьте консоль.</p>";
     });
   }
   function updateTimer() {
