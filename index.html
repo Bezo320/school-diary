@@ -86,70 +86,60 @@ hwContent"></div>
   let currentUser = { uid: "", role: "", class: "" };
   const subjects = ["Математика","Русский язык","Физика","История","Английский","Химия","Биология"];
 
-  // ---------- РАСПИСАНИЕ ДЛЯ ВСЕХ КЛАССОВ (хранится прямо в коде) ----------
-  const scheduleDB = {};
-
-  // Генерация расписания для всех 1-11, А,Б,В
+  // ---------- РАСПИСАНИЕ (прямо в коде, не в Firebase) ----------
+  const scheduleData = {
+    "1А": { "Понедельник":"1. Русский язык\n2. Математика\n3. Окружающий мир\n4. Физ-ра\n5. Английский","Вторник":"1. Математика\n2. Русский язык\n3. Литературное чтение\n4. ИЗО\n5. Музыка","Среда":"1. Русский язык\n2. Математика\n3. Технология\n4. Окружающий мир\n5. Физ-ра","Четверг":"1. Математика\n2. Русский язык\n3. Английский язык\n4. Литература\n5. ОРКСЭ","Пятница":"1. Русский язык\n2. Математика\n3. Физ-ра\n4. Окружающий мир\n5. Английский" },
+    "1Б": { "Понедельник":"1. Русский язык\n2. Математика\n3. Физ-ра\n4. Окружающий мир\n5. Английский","Вторник":"1. Математика\n2. Русский язык\n3. ИЗО\n4. Литературное чтение\n5. Музыка","Среда":"1. Русский язык\n2. Математика\n3. Окружающий мир\n4. Технология\n5. Физ-ра","Четверг":"1. Математика\n2. Русский язык\n3. Литература\n4. Английский\n5. ОРКСЭ","Пятница":"1. Русский язык\n2. Математика\n3. Английский\n4. Физ-ра\n5. Окружающий мир" },
+    "1В": { "Понедельник":"1. Математика\n2. Русский язык\n3. Окружающий мир\n4. Английский\n5. Физ-ра","Вторник":"1. Русский язык\n2. Математика\n3. Литературное чтение\n4. Музыка\n5. ИЗО","Среда":"1. Математика\n2. Русский язык\n3. Технология\n4. Физ-ра\n5. Окружающий мир","Четверг":"1. Русский язык\n2. Математика\n3. Английский\n4. Литература\n5. ОРКСЭ","Пятница":"1. Математика\n2. Русский язык\n3. Физ-ра\n4. Английский\n5. Окружающий мир" },
+    // ... для всех 1-11, А,Б,В. Чтобы не загромождать, сгенерируем через цикл (см. ниже)
+  };
+  // Автоматически заполняем для всех 1-11, А,Б,В
   for (let n = 1; n <= 11; n++) {
     for (let letter of ["А","Б","В"]) {
       const className = n + letter;
-      const days = ["Понедельник","Вторник","Среда","Четверг","Пятница"];
-      let base = {};
-      if (n <= 4) {
-        base = {
-          "Понедельник": ["Русский язык", "Математика", "Окружающий мир", "Физ-ра", "Английский"],
-          "Вторник": ["Математика", "Русский язык", "Литературное чтение", "ИЗО", "Музыка"],
-          "Среда": ["Русский язык", "Математика", "Технология", "Окружающий мир", "Физ-ра"],
-          "Четверг": ["Математика", "Русский язык", "Английский язык", "Литература", "ОРКСЭ"],
-          "Пятница": ["Русский язык", "Математика", "Физ-ра", "Окружающий мир", "Английский"]
-        };
-      } else if (n <= 9) {
-        base = {
-          "Понедельник": ["Алгебра", "Русский язык", "Физика", "История", "Английский", "Биология"],
-          "Вторник": ["Геометрия", "Литература", "Химия", "Обществознание", "Физ-ра", "География"],
-          "Среда": ["Алгебра", "Русский язык", "Физика", "Английский", "ОБЖ", "Информатика"],
-          "Четверг": ["Геометрия", "Литература", "История", "Химия", "Физ-ра", "Английский"],
-          "Пятница": ["Алгебра", "Русский язык", "Биология", "География", "Обществознание", "Технология"]
-        };
-      } else {
-        base = {
-          "Понедельник": ["Алгебра и начала анализа", "Русский язык", "Физика", "Информатика", "Английский", "Обществознание"],
-          "Вторник": ["Геометрия", "Литература", "Химия", "Биология", "Физ-ра", "Экономика"],
-          "Среда": ["Алгебра", "Русский язык", "Физика", "Астрономия", "Английский", "Право"],
-          "Четверг": ["Геометрия", "Литература", "История", "Химия", "Физ-ра", "МХК"],
-          "Пятница": ["Алгебра", "Русский язык", "Биология", "ОБЖ", "Английский", "Проектная деятельность"]
-        };
-      }
-      // Вариации по буквам
-      if (letter === 'Б') {
-        if (base["Понедельник"]) [base["Понедельник"][2], base["Понедельник"][3]] = [base["Понедельник"][3], base["Понедельник"][2]];
-        if (base["Среда"]) base["Среда"][1] = "Родной язык";
-      } else if (letter === 'В') {
-        if (base["Вторник"]) base["Вторник"][2] = "Экология";
-        if (base["Четверг"]) base["Четверг"][4] = "Рисование";
-      }
-      const schedule = {};
-      for (let day of days) {
-        if (base[day]) {
-          schedule[day] = base[day].map((item, idx) => `${idx+1}. ${item}`).join('\n');
+      if (!scheduleData[className]) {
+        const days = ["Понедельник","Вторник","Среда","Четверг","Пятница"];
+        const schedule = {};
+        if (n <= 4) {
+          schedule["Понедельник"] = "1. Русский язык\n2. Математика\n3. Окружающий мир\n4. Физ-ра\n5. Английский";
+          schedule["Вторник"] = "1. Математика\n2. Русский язык\n3. Литературное чтение\n4. ИЗО\n5. Музыка";
+          schedule["Среда"] = "1. Русский язык\n2. Математика\n3. Технология\n4. Окружающий мир\n5. Физ-ра";
+          schedule["Четверг"] = "1. Математика\n2. Русский язык\n3. Английский язык\n4. Литература\n5. ОРКСЭ";
+          schedule["Пятница"] = "1. Русский язык\n2. Математика\n3. Физ-ра\n4. Окружающий мир\n5. Английский";
+        } else if (n <= 9) {
+          schedule["Понедельник"] = "1. Алгебра\n2. Русский язык\n3. Физика\n4. История\n5. Английский\n6. Биология";
+          schedule["Вторник"] = "1. Геометрия\n2. Литература\n3. Химия\n4. Обществознание\n5. Физ-ра\n6. География";
+          schedule["Среда"] = "1. Алгебра\n2. Русский язык\n3. Физика\n4. Английский\n5. ОБЖ\n6. Информатика";
+          schedule["Четверг"] = "1. Геометрия\n2. Литература\n3. История\n4. Химия\n5. Физ-ра\n6. Английский";
+          schedule["Пятница"] = "1. Алгебра\n2. Русский язык\n3. Биология\n4. География\n5. Обществознание\n6. Технология"
+
+
+;
         } else {
-          schedule[day] = "Нет уроков";
+          schedule["Понедельник"] = "1. Алгебра и начала анализа\n2. Русский язык\n3. Физика\n4. Информатика\n5. Английский\n6. Обществознание";
+          schedule["Вторник"] = "1. Геометрия\n2. Литература\n3. Химия\n4. Биология\n5. Физ-ра\n6. Экономика";
+          schedule["Среда"] = "1. Алгебра\n2. Русский язык\n3. Физика\n4. Астрономия\n5. Английский\n6. Право";
+          schedule["Четверг"] = "1. Геометрия\n2. Литература\n3. История\n4. Химия\n5. Физ-ра\n6. МХК";
+          schedule["Пятница"] = "1. Алгебра\n2. Русский язык\n3. Биология\n4. ОБЖ\n5. Английский\n6. Проектная деятельность";
         }
+        // Небольшие вариации по буквам
+        if (letter === 'Б') {
+          if (schedule["Понедельник"]) schedule["Понедельник"] = schedule["Понедельник"].replace("Физика", "Биология").replace("Биология", "Физика");
+        } else if (letter === 'В') {
+          if (schedule["Вторник"]) schedule["Вторник"] = schedule["Вторник"].replace("Химия", "Экология");
+        }
+        scheduleData[className] = schedule;
       }
-      scheduleDB[className] = schedule;
     }
   }
 
-  // Демо-ученики (для отображения в журнале учителя) – создаются при входе
+  // Демо-ученики (для учителя) – создаём в Firebase при необходимости
   async function ensureDemoStudents(className) {
     const studentsList = [];
     for (let i = 1; i <= 3; i++) {
       studentsList.push({
         email: `student${i}_${className.replace(/[^a-z0-9]/gi,'')}@demo.ru`,
-        name: `Ученик ${i} (${cl
-
-
-assName})`
+        name: `Ученик ${i} (${className})`
       });
     }
     const usersRef = db.ref("users");
@@ -199,25 +189,22 @@ assName})`
   }
   auth.onAuthStateChanged(async (user) => {
     if(user) {
-      try {
-        const snap = await db.ref("users/"+user.uid).once("value");
-        if(snap.val()) {
-          currentUser = snap.val();
-          currentUser.uid = user.uid;
-          await ensureDemoStudents(currentUser.class);
-          initApp();
-        } else {
-          await db.ref("users/"+user.uid).set({role:"student", class:"5А", email:user.email});
-          location.reload();
-        }
-      } catch(e) {
-        console.error(e);
-        alert("Ошибка загрузки данных. Проверьте интернет и правила Firebase.");
+      const snap = await db.ref("users/"+user.uid).once("value");
+      if(snap.val()) {
+        currentUser = snap.val();
+        currentUser.uid = user.uid;
+        await ensureDemoStudents(currentUser.class);
+        initApp();
+      } else {
+        await db.ref("users/"+user.uid).set({role:"student", class:"5А", email:user.email});
+        location.reload();
       }
     } else {
       document.getElementById("loginBox").classList.remove("hidden");
       document.getElementById("appBox").classList.add("hidden");
-      document.getElementById("exitBtn").classList.add("hidden");
+
+
+document.getElementById("exitBtn").classList.add("hidden");
       document.getElementById("timer-box").classList.add("hidden");
     }
   });
@@ -238,12 +225,10 @@ assName})`
     } else {
       document.getElementById("s-view").classList.remove("hidden");
       document.getElementById("t-view").classList.add("hidden");
-
-
-loadMyMarks();
+      loadMyMarks();
     }
     loadHW();
-    loadSchedule();  // отображаем расписание из scheduleDB
+    loadSchedule();   // отображаем расписание из scheduleData
     updateTimer();
   }
   function showTab(id, btnId) {
@@ -251,6 +236,8 @@ loadMyMarks();
     document.querySelectorAll(".nav button").forEach(b=>b.classList.remove("active"));
     document.getElementById(id).classList.remove("hidden");
     document.getElementById(btnId).classList.add("active");
+    // Если переключились на вкладку расписания, можно перерисовать (на всякий случай)
+    if (id === 'tab-s') loadSchedule();
   }
   function loadClass() {
     db.ref("users").orderByChild("class").equalTo(currentUser.class).on("value", snap=>{
@@ -307,7 +294,10 @@ ${data.text}${img}</div><hr>`;
   }
   function saveHW() {
     let btn = document.getElementById("hwBtn");
-    let date = document.getElementById("hDate").value;
+    let date = docume
+
+
+nt.getElementById("hDate").value;
     let subj = document.getElementById("hSub").value;
     let text = document.getElementById("hText").value;
     let file = document.getElementById("hFile").files[0];
@@ -323,18 +313,23 @@ ${data.text}${img}</div><hr>`;
       ref.put(file).then(()=>ref.getDownloadURL()).then(publish).catch(e=>alert("Ошибка фото"));
     } else publish();
   }
-  // Отображение расписания из локального объекта scheduleDB
+  // Функция отображения расписания из локального объекта
   function loadSchedule() {
     const className = currentUser.class;
-    const schedule = scheduleDB[className];
-    let html = "<h3>Расписание</h3>";
+    const schedule = scheduleData[className];
+    let html = "<h3>Расписание уроков</h3>";
     if (schedule) {
       const days = ["Понедельник","Вторник","Среда","Четверг","Пятница"];
       for (let day of days) {
         const lessons = schedule[day];
-        html += `<b>${day}</b><pre>${lessons}</pre><hr>`;
+        if (lessons) {
+          html += `<b>${day}</b><pre>${lessons}</pre><hr>`;
+        } else {
+          html += `<b>${day}</b><pre>Нет уроков</pre><hr>`;
+        }
       }
-    } else {html += "Расписание не найдено для этого класса.";
+    } else {
+      html += "<p>Расписание для этого класса не найдено.</p>";
     }
     document.getElementById("scheduleBox").innerHTML = html;
   }
@@ -350,3 +345,7 @@ ${data.text}${img}</div><hr>`;
 </script>
 </body>
 </html>
+
+
+
+
