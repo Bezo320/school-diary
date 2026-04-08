@@ -38,10 +38,7 @@
     <input id="pass" type="password" placeholder="Пароль">
     <select id="role"><option value="student">Ученик</option><option value="teacher">Учитель</option></select>
     <div class="flex">
-      <select id="cN">
-        <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
-        <option>6</option><option>7</option><option>8</option><option>9</option><option>10</option><option>11</option>
-      </select>
+      <select id="cN"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option><option>11</option></select>
       <select id="cL"><option>А</option><option>Б</option><option>В</option></select>
       <span>класс</span>
     </div>
@@ -61,10 +58,7 @@
       </div>
     </div>
     <div id="tab-h" class="section hidden">
-      <div class="card"><h3>ДЗ</h3><input type="date" id="hDate" onchange="loadHW()"><div id="
-
-
-hwContent"></div>
+      <div class="card"><h3>ДЗ</h3><input type="date" id="hDate" onchange="loadHW()"><div id="hwContent"></div>
       <div id="t-hw" class="hidden"><hr><select id="hSub"></select><textarea id="hText" rows="2"></textarea><input type="file" id="hFile" accept="image/*"><button onclick="saveHW()">Опубликовать</button></div></div>
     </div>
     <div id="tab-s" class="section hidden"><div class="card" id="scheduleBox"></div></div>
@@ -86,7 +80,7 @@ hwContent"></div>
   let currentUser = { uid: "", role: "", class: "" };
   const subjects = ["Математика","Русский язык","Физика","История","Английский","Химия","Биология"];
 
-  // ---------- РАСПИСАНИЕ (ПРЯМО В КОДЕ) ----------
+  // ---------- РАСПИСАНИЕ (ЛОКАЛЬНОЕ) ----------
   const scheduleData = {};
   for (let n = 1; n <= 11; n++) {
     for (let letter of ["А","Б","В"]) {
@@ -132,10 +126,7 @@ hwContent"></div>
     const existingEmails = new Set();
     snapshot.forEach(child => { if (child.val().email) existingEmails.add(child.val().email); });
     for (let i = 0; i < students.length; i++) {
-      const st = students[i]
-
-
-;
+      const st = students[i];
       if (!existingEmails.has(st.email)) {
         const fakeUid = "demo_" + className + "_" + (i+1);
         await usersRef.child(fakeUid).set({
@@ -171,11 +162,13 @@ hwContent"></div>
         } else alert("Ошибка: "+err.message);
       });
   }
+
   function resetPass() {
     const email = document.getElementById("email").value;
     if(!email) return alert("Введите email");
     auth.sendPasswordResetEmail(email).then(()=>alert("Письмо отправлено")).catch(e=>alert(e.message));
   }
+
   auth.onAuthStateChanged(async (user) => {
     if(user) {
       const snap = await db.ref("users/"+user.uid).once("value");
@@ -195,6 +188,7 @@ hwContent"></div>
       document.getElementById("timer-box").classList.add("hidden");
     }
   });
+
   function initApp() {
     document.getElementById("loginBox").classList.add("hidden");
     document.getElementById("appBox").classList.remove("hidden");
@@ -218,6 +212,7 @@ hwContent"></div>
     loadSchedule();
     updateTimer();
   }
+
   function showTab(id, btnId) {
     document.querySelectorAll(".section").forEach(s=>s.classList.add("hidden"));
     document.querySelectorAll(".nav button").forEach(b=>b.classList.remove("active"));
@@ -225,11 +220,9 @@ hwContent"></div>
     document.getElementById(btnId).classList.add("active");
     if (id === 'tab-s') loadSchedule();
   }
+
   function loadClass() {
-    db.ref("users").orderByChild("class").equalTo(curren
-
-
-tUser.class).on("value", snap=>{
+    db.ref("users").orderByChild("class").equalTo(currentUser.class).on("value", snap=>{
       let html="";
       snap.forEach(c=>{
         if(c.val().role==="student"){
@@ -240,6 +233,7 @@ tUser.class).on("value", snap=>{
       document.getElementById("sList").innerHTML = html || "Нет учеников";
     });
   }
+
   function addMark(uid) {
     let val = document.getElementById("in_"+uid).value;
     let date = document.getElementById("mDate").value;
@@ -251,6 +245,7 @@ tUser.class).on("value", snap=>{
     document.getElementById("in_"+uid).value="";
     alert("Оценка добавлена");
   }
+
   function loadMyMarks() {
     db.ref(`marks/${currentUser.uid}`).on("value", snap=>{
       let html="";
@@ -261,12 +256,12 @@ tUser.class).on("value", snap=>{
           let cls = v>=5?"m-5":v==4?"m-4":v==3?"m-3":"m-2";
           marks+=`<span class="mark-badge ${cls}">${v}</span>`;
         });
-        html+=`<div><b>${sub.key}</b>
-${marks}</div><hr>`;
+        html+=`<div><b>${sub.key}</b><br>${marks}</div><hr>`;
       });
       document.getElementById("myMarks").innerHTML = html || "Оценок нет";
     });
   }
+
   function loadHW() {
     let date = document.getElementById("hDate").value;
     if(!date) return;
@@ -275,12 +270,12 @@ ${marks}</div><hr>`;
       snap.forEach(c=>{
         let data=c.val();
         let img=data.img?`<img src="${data.img}" style="max-width:100%; border-radius:12px; margin-top:8px;" onclick="window.open('${data.img}')">`:"";
-        html+=`<div><b>${c.key}</b>
-${data.text}${img}</div><hr>`;
+        html+=`<div><b>${c.key}</b><br>${data.text}${img}</div><hr>`;
       });
       document.getElementById("hwContent").innerHTML = html || "Нет заданий";
     });
   }
+
   function saveHW() {
     let btn = document.getElementById("hwBtn");
     let date = document.getElementById("hDate").value;
@@ -299,6 +294,7 @@ ${data.text}${img}</div><hr>`;
       ref.put(file).then(()=>ref.getDownloadURL()).then(publish).catch(e=>alert("Ошибка фото"));
     } else publish();
   }
+
   function loadSchedule() {
     const className = currentUser.class;
     const schedule = scheduleData[className];
@@ -314,6 +310,7 @@ ${data.text}${img}</div><hr>`;
     }
     document.getElementById("scheduleBox").innerHTML = html;
   }
+
   function updateTimer() {
     setInterval(()=>{
       let now=new Date();
@@ -322,11 +319,8 @@ ${data.text}${img}</div><hr>`;
       document.getElementById("timer-val").innerText = `${status} ${h}:${m<10?'0'+m:m}`;
     },1000);
   }
+
   function exitApp() { auth.signOut().then(()=>location.reload()); }
 </script>
 </body>
 </html>
-
-
-
-
