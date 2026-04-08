@@ -24,7 +24,7 @@
     .m-5 { background: var(--m5); } .m-4 { background: var(--m4); } .m-3 { background: var(--m3); } .m-2 { background: var(--m2); }
     .hidden { display: none !important; }
     .flex { display: flex; gap: 10px; align-items: center; }
-    pre { white-space: pre-wrap; font-family: inherit; margin: 5px 0; background: #f1f5f9; padding: 10px; border-radius: 10px; }
+    pre { white-space: pre-wrap; font-family: inherit; margin: 5px 0; background: #f1f5f9; padding: 10px; border-radius: 10px; font-size: 14px; }
     hr { border: 0; border-top: 1px solid #eee; margin: 15px 0; }
   </style>
 </head>
@@ -37,7 +37,7 @@
 
 <div class="container">
   <div id="loginBox" class="card">
-    <h2>Вход / Регистрация</h2>
+    <h2>Вход</h2>
     <input id="email" type="email" placeholder="Email">
     <input id="pass" type="password" placeholder="Пароль">
     <select id="role"><option value="student">Ученик</option><option value="teacher">Учитель</option></select>
@@ -49,8 +49,9 @@
       <select id="cL"><option>А</option><option>Б</option><option>В</option></select>
       <span>класс</span>
     </div>
-    <button onclick="doAuth()">Войти / Создать аккаунт</button>
-    <button onclick="resetPass()" style="background:none; color:gray; font-size: 0.9em;">Забыли пароль?</button>
+    <button onclick="loginUser()">Войти</button>
+    <button onclick="registerUser()" style="background: var(--m3); color: black;">Создать аккаунт</button>
+    <button onclick="resetPass()" style="background:none; color:gray; font-size: 0.9em; box-shadow: none;">Забыли пароль?</button>
   </div>
 
   <div id="appBox" class="hidden">
@@ -61,13 +62,12 @@
     </div>
 
     <div id="tab-m" class="section">
-      <div class="card">
+
+
+<div class="card">
         <div id="t-view" class="hidden">
           <h3>Выставить оценки</h3>
-          <input
-
-
-type="date" id="mDate">
+          <input type="date" id="mDate">
           <select id="mSub"></select>
           <div id="sList">Загрузка учеников...</div>
         </div>
@@ -110,7 +110,11 @@ type="date" id="mDate">
     projectId: "school-diary-3798a",
     storageBucket: "school-diary-3798a.appspot.com"
   };
-  firebase.initializeApp(firebaseConfig);
+  
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+  }
+  
   const auth = firebase.auth();
   const db = firebase.database();
   const storage = firebase.storage();
@@ -121,7 +125,6 @@ type="date" id="mDate">
   // ---------- РАСПИСАНИЕ ----------
   function getScheduleForClass(className) {
     const num = parseInt(className);
-    const letter = className.slice(-1);
     let schedule = {
         "Понедельник": "1. Русский язык\n2. Математика\n3. Окружающий мир\n4. Физ-ра\n5. Английский",
         "Вторник": "1. Математика\n2. Русский язык\n3. Литературное чтение\n4. ИЗО\n5. Музыка",
@@ -151,50 +154,67 @@ type="date" id="mDate">
       const fakeUid = "demo_" + s.email.replace(/[^a-z0-9]/gi, "");
       db.ref("users/" + fakeUid).transaction((current) => {
         if (current === null) return { role: "student", class: className, email: s.email, name: s.name, isDemo: true };
-        return; 
+        return undefined; 
       });
     }
   }
 
   // ---------- AUTH ----------
-  function doAuth() {
+  function loginUser() {
+    const email = document.getElementById("email").value.trim();
+    const pass = document.getElementById("pass").value;
+    if(!email || !pass) return alert("Заполните email и пароль");
+    
+    auth.signInWithEmailAndPassword(email, pass).catch(err => {
+      alert("Ошибка входа: " + err.mes
+
+
+sage);
+    });
+  }
+
+  function registerUser() {
     const email = document.getElementById("email").value.trim();
     const pass = document.getElementById("pass").value;
     const role = document.getElementById("role").value;
     const className = document.getElementById("cN").value + document.getElementById("cL").value;
-    if(!email || !pass) return alert("Заполните поля");
+    
+    if(!email || !pass) return alert("Заполните email и пароль");
 
-    auth.signInWithEmailAndPassword(email, pass)
-      .then(cred => db.ref("users/"+cred.us
-
-
-er.uid).update({role, class: className, email}))
-      .catch(err => {
-        if(err.code === "auth/user-not-found" || err.code === "auth/wrong-password") {
-          auth.createUserWithEmailAndPassword(email, pass)
-            .then(cred => db.ref("users/"+cred.user.uid).set({role, class: className, email}))
-            .catch(e => alert("Ошибка: " + e.message));
-        } else alert("Ошибка: " + err.message);
-      });
+    auth.createUserWithEmailAndPassword(email, pass)
+      .then(cred => {
+        return db.ref("users/" + cred.user.uid).set({
+          role: role, 
+          class: className, 
+          email: email
+        });
+      })
+      .catch(e => alert("Ошибка регистрации: " + e.message));
   }
 
   function resetPass() {
     const email = document.getElementById("email").value;
-    if(!email) return alert("Введите email");
+    if(!email) return alert("Введите email для сброса");
     auth.sendPasswordResetEmail(email).then(()=>alert("Письмо для сброса отправлено")).catch(e=>alert(e.message));
   }
 
   auth.onAuthStateChanged(async (user) => {
     if(user) {
-      const snap = await db.ref("users/"+user.uid).once("value");
-      if(snap.val()) {
-        currentUser = snap.val();
-        currentUser.uid = user.uid;
+      try {
+        const snap = await db.ref("users/" + user.uid).once("value");
+        if(snap.val()) {
+          currentUser = snap.val();
+          currentUser.uid = user.uid;
+        } else {
+          // Если пользователь зарегистрировался, но данные не записались
+          currentUser = { role: "student", class: "5А", email: user.email, uid: user.uid };
+          await db.ref("users/" + user.uid).set(currentUser);
+        }
         await ensureDemoStudents(currentUser.class);
         initApp();
-      } else {
-        await db.ref("users/"+user.uid).set({role:"student", class:"5А", email:user.email});
-        location.reload();
+      } catch (error) {
+        console.error("Ошибка загрузки профиля: ", error);
+        alert("Ошибка подключения к базе данных. Проверьте правила Firebase.");
       }
     } else {
       document.getElementById("loginBox").classList.remove("hidden");
@@ -211,7 +231,7 @@ er.uid).update({role, class: className, email}))
     document.getElementById("timer-box").classList.remove("hidden");
     document.getElementById("topTitle").innerText = currentUser.class + " | " + (currentUser.role==="teacher"?"Учитель":"Ученик");
     
-    let opts = subjects.map(s=>`<option>${s}</option>`).join('');
+    let opts = subjects.map(s=>`<option value="${s}">${s}</option>`).join('');
     if(document.getElementById("mSub")) document.getElementById("mSub").innerHTML = opts;
     if(document.getElementById("hSub")) document.getElementById("hSub").innerHTML = opts;
 
@@ -246,7 +266,10 @@ er.uid).update({role, class: className, email}))
           let name = c.val().name || c.val().email.split('@')[0];
           html += `<div class="flex" style="margin-bottom:10px;">
             <span style="flex:1">${name}</span>
-            <input id="in_${c.key}" type="number" min="2" max="5" style="width:60px; margin:0;">
+            <input id="in_${c.key}" type="number" min="2" max="5" style="width
+
+
+:60px; margin:0;">
             <button onclick="addMark('${c.key}')" style="width:50px; margin:0; padding:8px;">OK</button>
           </div>`;
         }
@@ -261,10 +284,7 @@ er.uid).update({role, class: className, email}))
     let subj = document.getElementById("mSub").value;
     if(!val || !date || !subj) return alert("Заполните всё");
     db.ref(`marks/${uid}/${subj}`).push({v:parseInt(val), d:date});
-    document
-
-
-.getElementById("in_"+uid).value="";
+    document.getElementById("in_"+uid).value="";
     alert("Оценка добавлена");
   }
 
@@ -309,19 +329,29 @@ ${data.text}${img}</div><hr>`;
     if(!date || !text) return alert("Введите дату и текст");
 
     btn.disabled = true; btn.innerText = "Загрузка...";
+    
     const publish = (url="") => {
       db.ref(`homework/${currentUser.class}/${date}/${subj}`).set({text, img:url})
         .then(()=>{
           alert("Готово!");
           btn.disabled = false; btn.innerText = "Опубликовать";
           document.getElementById("hText").value = "";
-        }).catch(e=>alert(e.message));
+        }).catch(e=>{
+          alert(e.message);
+          btn.disabled = false; btn.innerText = "Опубликовать";
+        });
     };
 
     if(file) {
       const ref = storage.ref(`homework/${Date.now()}_${file.name}`);
-      ref.put(file).then(()=>ref.getDownloadURL()).then(publish).catch(()=>publish());
-    } else publish();
+      ref.put(file).then(()=>ref.getDownloadURL()).then(publish).catch((e)=>{
+        console.error(e);
+        alert("Ошибка загрузки фото. Проверьте Storage Rules.");
+        publish(); 
+      });
+    } else {
+      publish();
+    }
   }
 
   function loadSchedule() {
@@ -333,8 +363,10 @@ ${data.text}${img}</div><hr>`;
     document.getElementById("scheduleBox").innerHTML = html;
   }
 
+  let timerInterval;
   function updateTimer() {
-    setInterval(()=>{
+    if(timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(()=>{
       let now = new Date();
       let h = now.getHours(), m = now.getMinutes();
       let time = h * 60 + m;
@@ -343,7 +375,9 @@ ${data.text}${img}</div><hr>`;
     }, 1000);
   }
 
-  function exitApp() { auth.signOut().then(()=>location.reload()); }
+  function exitApp() { 
+    auth.signOut().then(() => location.reload()); 
+  }
 
   window.onload = () => {
     const today = new Date().toISOString().slice(0,10);
