@@ -10,30 +10,34 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
   <style>
     :root { --main: #f97316; --bg: #f8fafc; --card: #fff; --text: #1e293b; --m5: #22c55e; --m4: #a855f7; --m3: #eab308; --m2: #ef4444; }
-    body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; color: var(--text); }
     header { background: var(--main); color: #fff; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
     .container { max-width: 500px; margin: 20px auto; padding: 0 15px; }
     .card { background: var(--card); padding: 25px; border-radius: 24px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-    input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border-radius: 16px; border: 1px solid #ccc; }
-    button { width: 100%; padding: 12px; background: var(--main); color: white; border: none; border-radius: 16px; font-weight: bold; cursor: pointer; }
+    input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border-radius: 16px; border: 1px solid #ccc; box-sizing: border-box; }
+    button { width: 100%; padding: 12px; background: var(--main); color: white; border: none; border-radius: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+    button:disabled { background: #ccc; }
     .nav { display: flex; gap: 10px; margin-bottom: 20px; }
-    .nav button { background: #e2e8f0; color: black; }
+    .nav button { background: #e2e8f0; color: black; margin: 0; }
     .nav button.active { background: var(--main); color: white; }
-    .mark-badge { display: inline-block; width: 32px; height: 32px; line-height: 32px; text-align: center; border-radius: 10px; color: white; margin: 2px; }
+    .mark-badge { display: inline-block; width: 32px; height: 32px; line-height: 32px; text-align: center; border-radius: 10px; color: white; margin: 2px; font-weight: bold; }
     .m-5 { background: var(--m5); } .m-4 { background: var(--m4); } .m-3 { background: var(--m3); } .m-2 { background: var(--m2); }
     .hidden { display: none !important; }
     .flex { display: flex; gap: 10px; align-items: center; }
-    pre { white-space: pre-wrap; font-family: inherit; margin: 5px 0; }
+    pre { white-space: pre-wrap; font-family: inherit; margin: 5px 0; background: #f1f5f9; padding: 10px; border-radius: 10px; }
+    hr { border: 0; border-top: 1px solid #eee; margin: 15px 0; }
   </style>
 </head>
 <body>
+
 <header>
-  <div><strong id="topTitle">EDiary Premium</strong><div id="timer-box" class="hidden">🕒 <span id="timer-val"></span></div></div>
-  <button onclick="exitApp()" id="exitBtn" class="hidden" style="width:auto; background:#ef4444;">Выход</button>
+  <div><strong id="topTitle">EDiary Premium</strong> <span id="timer-box" class="hidden">🕒 <span id="timer-val"></span></span></div>
+  <button onclick="exitApp()" id="exitBtn" class="hidden" style="width:auto; background:#ef4444; margin:0;">Выход</button>
 </header>
+
 <div class="container">
   <div id="loginBox" class="card">
-    <h2>Вход</h2>
+    <h2>Вход / Регистрация</h2>
     <input id="email" type="email" placeholder="Email">
     <input id="pass" type="password" placeholder="Пароль">
     <select id="role"><option value="student">Ученик</option><option value="teacher">Учитель</option></select>
@@ -45,33 +49,60 @@
       <select id="cL"><option>А</option><option>Б</option><option>В</option></select>
       <span>класс</span>
     </div>
-    <button onclick="doAuth()">Войти / Регистрация</button>
-    <button onclick="resetPass()" style="background:none; color:gray;">Забыли пароль?</button>
+    <button onclick="doAuth()">Войти / Создать аккаунт</button>
+    <button onclick="resetPass()" style="background:none; color:gray; font-size: 0.9em;">Забыли пароль?</button>
   </div>
+
   <div id="appBox" class="hidden">
     <div class="nav">
       <button id="btn-m" onclick="showTab('tab-m','btn-m')" class="active">Оценки</button>
       <button id="btn-h" onclick="showTab('tab-h','btn-h')">ДЗ</button>
       <button id="btn-s" onclick="showTab('tab-s','btn-s')">Расписание</button>
     </div>
+
     <div id="tab-m" class="section">
       <div class="card">
-        <div id="t-view" class="hidden"><h3>Журнал</h3><input type="date" id="mDate"><select id="mSub"></select><div id="sList"></div></div>
-        <div id="s-view" class="hidden"><h3>Мои оценки</h3><div id="myMarks">Загрузка...</div></div>
+        <div id="t-view" class="hidden">
+          <h3>Выставить оценки</h3>
+          <input
+
+
+type="date" id="mDate">
+          <select id="mSub"></select>
+          <div id="sList">Загрузка учеников...</div>
+        </div>
+        <div id="s-view" class="hidden">
+          <h3>Мои оценки</h3>
+          <div id="myMarks">Загрузка...</div>
+        </div>
       </div>
     </div>
+
     <div id="tab-h" class="section hidden">
-      <div class="card"><h3>ДЗ</h3><input type="date" id="hDate" onchange="loadHW()"><div id="
-
-
-hwContent"></div>
-      <div id="t-hw" class="hidden"><hr><select id="hSub"></select><textarea id="hText" rows="2"></textarea><input type="file" id="hFile" accept="image/*"><button onclick="saveHW()">Опубликовать</button></div></div>
+      <div class="card">
+        <h3>Домашнее задание</h3>
+        <input type="date" id="hDate" onchange="loadHW()">
+        <div id="hwContent">Нет заданий</div>
+        
+        <div id="t-hw" class="hidden">
+          <hr>
+          <h4>Добавить задание</h4>
+          <select id="hSub"></select>
+          <textarea id="hText" rows="2" placeholder="Описание задания..."></textarea>
+          <input type="file" id="hFile" accept="image/*">
+          <button id="hwBtn" onclick="saveHW()">Опубликовать</button>
+        </div>
+      </div>
     </div>
-    <div id="tab-s" class="section hidden"><div class="card" id="scheduleBox"></div></div>
+
+    <div id="tab-s" class="section hidden">
+      <div class="card" id="scheduleBox"></div>
+    </div>
   </div>
 </div>
+
 <script>
-  // ---------- FIREBASE ----------
+  // ---------- FIREBASE CONFIG ----------
   const firebaseConfig = {
     apiKey: "AIzaSyCEo8QxfX8faFjUaQNwNlTXbvws7LgXAEs",
     authDomain: "school-diary-3798a.firebaseapp.com",
@@ -87,20 +118,18 @@ hwContent"></div>
   let currentUser = { uid: "", role: "", class: "" };
   const subjects = ["Математика","Русский язык","Физика","История","Английский","Химия","Биология"];
 
-  // ---------- РАСПИСАНИЕ (ЛОКАЛЬНОЕ) ----------
+  // ---------- РАСПИСАНИЕ ----------
   function getScheduleForClass(className) {
     const num = parseInt(className);
     const letter = className.slice(-1);
-    let schedule = {};
-    if (num <= 4) {
-      schedule = {
+    let schedule = {
         "Понедельник": "1. Русский язык\n2. Математика\n3. Окружающий мир\n4. Физ-ра\n5. Английский",
         "Вторник": "1. Математика\n2. Русский язык\n3. Литературное чтение\n4. ИЗО\n5. Музыка",
         "Среда": "1. Русский язык\n2. Математика\n3. Технология\n4. Окружающий мир\n5. Физ-ра",
         "Четверг": "1. Математика\n2. Русский язык\n3. Английский язык\n4. Литература\n5. ОРКСЭ",
         "Пятница": "1. Русский язык\n2. Математика\n3. Физ-ра\n4. Окружающий мир\n5. Английский"
-      };
-    } else if (num <= 9) {
+    };
+    if (num >= 5) {
       schedule = {
         "Понедельник": "1. Алгебра\n2. Русский язык\n3. Физика\n4. История\n5. Английский\n6. Биология",
         "Вторник": "1. Геометрия\n2. Литература\n3. Химия\n4. Обществознание\n5. Физ-ра\n6. География",
@@ -108,82 +137,51 @@ hwContent"></div>
         "Четверг": "1. Геометрия\n2. Литература\n3. История\n4. Химия\n5. Физ-ра\n6. Английский",
         "Пятница": "1. Алгебра\n2. Русский язык\n3. Биология\n4. География\n5. Обществознание\n6. Технология"
       };
-    } else {
-      schedule = {
-        "Понедельник": "1. Алгебра и начала анализа\n2. Русский язык\n3. Физика\n4. Информатика\n5. Английский\n6. Обществознание",
-        "Вторник": "1. Геометрия\n2. Литература\n3. Химия\n4. Биология\n5. Физ-ра\n6. Экономика",
-        "Среда": "1. Алгебра\n2. Русский язык\n3. Физика\n4. Астрономия\n5. Английский\n6. Право",
-        "Четверг": "1. Геометрия\n2. Литература\n3. История\n4. Химия\n5. Физ-ра\n6. МХК",
-        "Пятница": "1. Алгебра\n2. Русский язык\n3. Биология\n4. ОБЖ\n5. Английский\n6. Проектная деятельность"
-      };
-    }
-    if (letter === 'Б' && num >= 5 && num <= 9) {
-      schedule["Понедельник"] = schedule["Понедельник"].replace("Физика", "Биология").replace("Биология", "Физика");
-    } else if (letter === 'В' && num >= 5 && num <= 9) {
-      schedule["Вторник"] = schedule["Вторник"].replace("Химия", "Экология");
     }
     return schedule;
   }
 
-  // ---------- ДЕМО-УЧЕНИКИ (ГАРАНТИРОВАННОЕ СОЗДАНИЕ) ----------
+  // ---------- СОЗДАНИЕ ДЕМО-ДАННЫХ ----------
   async function ensureDemoStudents(className) {
     const students = [
       { email: `student1_${className}@demo.ru`, name: "Анна Иванова" },
-      { email: `student2_${className}@demo.ru`, name: "Петр Сидоров" },
-      { email: `student3_${className}@demo.ru`, name: "Мария Козлова" }
+      { email: `student2_${className}@demo.ru`, name: "Петр Сидоров" }
     ];
-    const usersRef = db.ref("users");
-    const snapshot = await usersRef.orderByChild("class").equalTo(className).once("value");
-    const existingEmails = new Set();
-    snapshot.forEach(child => {
-      if (child.val().email) existingEmails.add(child.val().email);
-    });
-    for (let student of students) {
-      if (!existingEmails.has(student.email)) {
-        const fakeUid = "demo_" + student.email.replace(/[^
-
-
-a-z0-9]/gi, "");
-        await usersRef.child(fakeUid).set({
-          role: "student",
-          class: className,
-          email: student.email,
-          name: student.name,
-          isDemo: true
-        }).catch(e => console.warn("Ошибка создания ученика", e));
-      }
+    for (let s of students) {
+      const fakeUid = "demo_" + s.email.replace(/[^a-z0-9]/gi, "");
+      db.ref("users/" + fakeUid).transaction((current) => {
+        if (current === null) return { role: "student", class: className, email: s.email, name: s.name, isDemo: true };
+        return; 
+      });
     }
-    console.log(`Демо-ученики для ${className} созданы/проверены`);
   }
 
-  // ---------- ОСНОВНЫЕ ФУНКЦИИ ----------
-  window.onload = () => {
-    const today = new Date().toISOString().slice(0,10);
-    if(document.getElementById("mDate")) document.getElementById("mDate").value = today;
-    if(document.getElementById("hDate")) document.getElementById("hDate").value = today;
-  };
-
+  // ---------- AUTH ----------
   function doAuth() {
     const email = document.getElementById("email").value.trim();
     const pass = document.getElementById("pass").value;
     const role = document.getElementById("role").value;
     const className = document.getElementById("cN").value + document.getElementById("cL").value;
     if(!email || !pass) return alert("Заполните поля");
+
     auth.signInWithEmailAndPassword(email, pass)
-      .then(cred => db.ref("users/"+cred.user.uid).update({role, class: className, email}))
+      .then(cred => db.ref("users/"+cred.us
+
+
+er.uid).update({role, class: className, email}))
       .catch(err => {
-        if(err.code === "auth/user-not-found") {
+        if(err.code === "auth/user-not-found" || err.code === "auth/wrong-password") {
           auth.createUserWithEmailAndPassword(email, pass)
             .then(cred => db.ref("users/"+cred.user.uid).set({role, class: className, email}))
-            .catch(e => alert("Ошибка: "+e.message));
-        } else alert("Ошибка: "+err.message);
+            .catch(e => alert("Ошибка: " + e.message));
+        } else alert("Ошибка: " + err.message);
       });
   }
 
   function resetPass() {
     const email = document.getElementById("email").value;
     if(!email) return alert("Введите email");
-    auth.sendPasswordResetEmail(email).then(()=>alert("Письмо отправлено")).catch(e=>alert(e.message));
+    auth.sendPasswordResetEmail(email).then(()=>alert("Письмо для сброса отправлено")).catch(e=>alert(e.message));
   }
 
   auth.onAuthStateChanged(async (user) => {
@@ -192,7 +190,6 @@ a-z0-9]/gi, "");
       if(snap.val()) {
         currentUser = snap.val();
         currentUser.uid = user.uid;
-        // Ждём, пока ученики точно создадутся
         await ensureDemoStudents(currentUser.class);
         initApp();
       } else {
@@ -213,17 +210,20 @@ a-z0-9]/gi, "");
     document.getElementById("exitBtn").classList.remove("hidden");
     document.getElementById("timer-box").classList.remove("hidden");
     document.getElementById("topTitle").innerText = currentUser.class + " | " + (currentUser.role==="teacher"?"Учитель":"Ученик");
+    
     let opts = subjects.map(s=>`<option>${s}</option>`).join('');
     if(document.getElementById("mSub")) document.getElementById("mSub").innerHTML = opts;
     if(document.getElementById("hSub")) document.getElementById("hSub").innerHTML = opts;
+
     if(currentUser.role === "teacher") {
       document.getElementById("t-view").classList.remove("hidden");
       document.getElementById("t-hw").classList.remove("hidden");
       document.getElementById("s-view").classList.add("hidden");
-      loadClass(); // Загружаем список учеников
+      loadClass();
     } else {
       document.getElementById("s-view").classList.remove("hidden");
       document.getElementById("t-view").classList.add("hidden");
+      document.getElementById("t-hw").classList.add("hidden");
       loadMyMarks();
     }
     loadHW();
@@ -235,31 +235,23 @@ a-z0-9]/gi, "");
     document.querySelectorAll(".section").forEach(s=>s.classList.add("hidden"));
     document.querySelectorAll(".nav button").forEach(b=>b.classList.remove("active"));
     document.getElementById(id).classList.remove("hidden");
-    document.getElementById(btnId).classLis
-
-
-t.add("active");
-    if (id === 'tab-m' && currentUser.role === "teacher") {
-      loadClass(); // Обновляем список учеников при переключении на вкладку Оценки
-    }
-    if (id === 'tab-s') loadSchedule();
+    document.getElementById(btnId).classList.add("active");
   }
 
   function loadClass() {
     db.ref("users").orderByChild("class").equalTo(currentUser.class).on("value", snap=>{
       let html = "";
-      let hasStudents = false;
       snap.forEach(c=>{
         if(c.val().role === "student"){
-          hasStudents = true;
           let name = c.val().name || c.val().email.split('@')[0];
-          html += `<div class="flex"><span>${name}</span><input id="in_${c.key}" type="number" min="2" max="5" style="width:70px"><button onclick="addMark('${c.key}')">OK</button></div>`;
+          html += `<div class="flex" style="margin-bottom:10px;">
+            <span style="flex:1">${name}</span>
+            <input id="in_${c.key}" type="number" min="2" max="5" style="width:60px; margin:0;">
+            <button onclick="addMark('${c.key}')" style="width:50px; margin:0; padding:8px;">OK</button>
+          </div>`;
         }
       });
-      if (!hasStudents) {
-        html = "<p>⚠️ В этом классе пока нет учеников. Попробуйте обновить страницу или войти позже.</p>";
-      }
-      document.getElementById("sList").innerHTML = html;
+      document.getElementById("sList").innerHTML = html || "Учеников нет";
     });
   }
 
@@ -268,10 +260,11 @@ t.add("active");
     let date = document.getElementById("mDate").value;
     let subj = document.getElementById("mSub").value;
     if(!val || !date || !subj) return alert("Заполните всё");
-    let mark = parseInt(val);
-    if(mark<2||mark>5) return alert("Оценка 2-5");
-    db.ref(`marks/${uid}/${subj}`).push({v:mark, d:date, teacher:currentUser.uid});
-    document.getElementById("in_"+uid).value="";
+    db.ref(`marks/${uid}/${subj}`).push({v:parseInt(val), d:date});
+    document
+
+
+.getElementById("in_"+uid).value="";
     alert("Оценка добавлена");
   }
 
@@ -285,10 +278,10 @@ t.add("active");
           let cls = v>=5?"m-5":v==4?"m-4":v==3?"m-3":"m-2";
           marks+=`<span class="mark-badge ${cls}">${v}</span>`;
         });
-        html+=`<div><b>${sub.key}</b>
+        html+=`<div style="margin-bottom:10px;"><b>${sub.key}</b>
 ${marks}</div><hr>`;
       });
-      document.getElementById("myMarks").innerHTML = html || "Оценок нет";
+      document.getElementById("myMarks").innerHTML = html || "Оценок пока нет";
     });
   }
 
@@ -299,54 +292,64 @@ ${marks}</div><hr>`;
       let html="";
       snap.forEach(c=>{
         let data=c.val();
-        let img=data.img?`<img src="${data.img}" style="max-width:100%; border-radius:12px; margin-top:8px;" onclick="window.open('${data.img}')">`:"";
-        html+=`<div><b>${c.key}</b>
+        let img = data.img ? `<img src="${data.img}" style="width:100%; border-radius:12px; margin-top:8px;">` : "";
+        html += `<div><b style="color:var(--main)">${c.key}</b>
 ${data.text}${img}</div><hr>`;
       });
-      document.getElementById("hwContent").innerHTML = html || "Нет заданий";
+      document.getElementById("hwContent").innerHTML = html || "На этот день заданий нет";
     });
   }
 
   function saveHW() {
-    let btn = document.getElementById("hwBtn");
-    let date = document.getElementById("hDate").value;
-    let subj = document.getElementById("hSub").value;
-    let text = document.getElementById("hText").value;
-    let file = document.getElementById("hFile").files[0];
-    if(!date || !text) return alert("Дата и текст");
-    btn.disabled=true; btn.innerText="Загрузка...";
-    let publish = (url="")=>{
-      db.ref(`homework/${currentUser.class}/${date}/${subj}`).set({text, img:url, teacher:currentUser.uid})
-        .then(()=>{alert("Опубликовано"); btn.disabled=false; btn.innerText="Опубликовать"; document.getElementById("hText").value=""; document.getElementById("hFile").value="";})
-        .catch(e=>alert(e.message));
+    const btn = document.getElementById("hwBtn");
+    const date = document.getElementById("hDate").value;
+    const subj = document.getElementById("hSub").value;
+    const text = document.getElementById("hText").value;
+    const file = document.getElementById("hFile").files[0];
+    if(!date || !text) return alert("Введите дату и текст");
+
+    btn.disabled = true; btn.innerText = "Загрузка...";
+    const publish = (url="") => {
+      db.ref(`homework/${currentUser.class}/${date}/${subj}`).set({text, img:url})
+        .then(()=>{
+          alert("Готово!");
+          btn.disabled = false; btn.innerText = "Опубликовать";
+          document.getElementById("hText").value = "";
+        }).catch(e=>alert(e.message));
     };
-    if(file){
-      let ref = storage.ref(`homework/${currentUser.class}/${Date.now()}_${file.name}`);
-      ref.put(file).then(()=>ref.getDownloadURL()).then(publish).catch(e=>alert("Ошибка фото"));
+
+    if(file) {
+      const ref = storage.ref(`homework/${Date.now()}_${file.name}`);
+      ref.put(file).then(()=>ref.getDownloadURL()).then(publish).catch(()=>publish());
     } else publish();
   }
 
   function loadSchedule() {
-    const className = currentUser.class;
-    const schedule = getScheduleForClass(className);
-    let html = "<h3>Расписание уроков</h3>";
-    const days = ["Понедельник","Вторник","Среда","Четверг","Пятница"];
-    for (let day of days) {
-      const lessons = schedule[day];
-      html += `<b>${day}</b><pre>${lessons || "Нет уроков"}</pre><hr>`;
-    }
+    const schedule = getScheduleForClass(currentUser.class);
+    let html = "<h3>Расписание</h3>";
+    ["Понедельник","Вторник","Среда","Четверг","Пятница"].forEach(day=>{
+      html += `<b>${day}</b><pre>${schedule[day] || "Нет уроков"}</pre><hr>`;
+    });
     document.getElementById("scheduleBox").innerHTML = html;
   }
 
   function updateTimer() {
-    setInterval(()=>{let now=new Date();
-      let h=now.getHours(), m=now.getMinutes();
-      let status = (h*60+m>=480 && h*60+m<840)?"Идут уроки":"Уроки окончены";
-      document.getElementById("timer-val").innerText = `${status} ${h}:${m<10?'0'+m:m}`;
-    },1000);
+    setInterval(()=>{
+      let now = new Date();
+      let h = now.getHours(), m = now.getMinutes();
+      let time = h * 60 + m;
+      let status = (time >= 480 && time < 840) ? "Идут уроки" : "Уроки окончены";
+      document.getElementById("timer-val").innerText = `${status} (${h}:${m < 10 ? '0'+m : m})`;
+    }, 1000);
   }
 
   function exitApp() { auth.signOut().then(()=>location.reload()); }
+
+  window.onload = () => {
+    const today = new Date().toISOString().slice(0,10);
+    if(document.getElementById("mDate")) document.getElementById("mDate").value = today;
+    if(document.getElementById("hDate")) document.getElementById("hDate").value = today;
+  };
 </script>
 </body>
 </html>
