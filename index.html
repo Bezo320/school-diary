@@ -206,7 +206,6 @@ sage);
           currentUser = snap.val();
           currentUser.uid = user.uid;
         } else {
-          // Если пользователь зарегистрировался, но данные не записались
           currentUser = { role: "student", class: "5А", email: user.email, uid: user.uid };
           await db.ref("users/" + user.uid).set(currentUser);
         }
@@ -232,8 +231,10 @@ sage);
     document.getElementById("topTitle").innerText = currentUser.class + " | " + (currentUser.role==="teacher"?"Учитель":"Ученик");
     
     let opts = subjects.map(s=>`<option value="${s}">${s}</option>`).join('');
-    if(document.getElementById("mSub")) document.getElementById("mSub").innerHTML = opts;
-    if(document.getElementById("hSub")) document.getElementById("hSub").innerHTML = opts;
+    const mSubEl = document.getElementById("mSub");
+    const hSubEl = document.getElementById("hSub");
+    if(mSubEl) mSubEl.innerHTML = opts;
+    if(hSubEl) hSubEl.innerHTML = opts;
 
     if(currentUser.role === "teacher") {
       document.getElementById("t-view").classList.remove("hidden");
@@ -266,11 +267,11 @@ sage);
           let name = c.val().name || c.val().email.split('@')[0];
           html += `<div class="flex" style="margin-bottom:10px;">
             <span style="flex:1">${name}</span>
-            <input id="in_${c.key}" type="number" min="2" max="5" style="width
+            <input id="in_${c.key}" type="number" min="2" max="5" style="width:60px; margin:0;">
+            <button onclick="addMark('${c.key}')" s
 
 
-:60px; margin:0;">
-            <button onclick="addMark('${c.key}')" style="width:50px; margin:0; padding:8px;">OK</button>
+tyle="width:50px; margin:0; padding:8px;">OK</button>
           </div>`;
         }
       });
@@ -298,8 +299,7 @@ sage);
           let cls = v>=5?"m-5":v==4?"m-4":v==3?"m-3":"m-2";
           marks+=`<span class="mark-badge ${cls}">${v}</span>`;
         });
-        html+=`<div style="margin-bottom:10px;"><b>${sub.key}</b>
-${marks}</div><hr>`;
+        html+=`<div style="margin-bottom:10px;"><b>${sub.key}</b> ${marks}</div><hr>`;
       });
       document.getElementById("myMarks").innerHTML = html || "Оценок пока нет";
     });
@@ -313,8 +313,7 @@ ${marks}</div><hr>`;
       snap.forEach(c=>{
         let data=c.val();
         let img = data.img ? `<img src="${data.img}" style="width:100%; border-radius:12px; margin-top:8px;">` : "";
-        html += `<div><b style="color:var(--main)">${c.key}</b>
-${data.text}${img}</div><hr>`;
+        html += `<div><b style="color:var(--main)">${c.key}</b> ${data.text}${img}</div><hr>`;
       });
       document.getElementById("hwContent").innerHTML = html || "На этот день заданий нет";
     });
@@ -381,8 +380,10 @@ ${data.text}${img}</div><hr>`;
 
   window.onload = () => {
     const today = new Date().toISOString().slice(0,10);
-    if(document.getElementById("mDate")) document.getElementById("mDate").value = today;
-    if(document.getElementById("hDate")) document.getElementById("hDate").value = today;
+    const mDateEl = document.getElementById("mDate");
+    const hDateEl = document.getElementById("hDate");
+    if(mDateEl) mDateEl.value = today;
+    if(hDateEl) hDateEl.value = today;
   };
 </script>
 </body>
